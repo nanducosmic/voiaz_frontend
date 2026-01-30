@@ -10,7 +10,7 @@ import {
   IconLink,
   IconUserCheck,
   IconHelpCircle,
-  IconHistory, // Added for the new Call History page
+  IconHistory,
 } from '@tabler/icons-react'
 
 export const sidebarData = {
@@ -41,7 +41,7 @@ export const sidebarData = {
           icon: IconPhoneCall,
         },
         {
-          title: 'Call History', // New item added here
+          title: 'Call History',
           url: '/history',
           icon: IconHistory,
         },
@@ -74,6 +74,8 @@ export const sidebarData = {
           title: 'Admin Panel',
           url: '/admin',
           icon: IconUserShield,
+          // MISSION: Restrict to superadmin only
+          roles: ['superadmin'], 
         },
       ],
     },
@@ -86,7 +88,13 @@ export const sidebarData = {
           items: [
             { title: 'Profile', url: '/settings/profile' },
             { title: 'Account', url: '/settings/account' },
-            { title: 'Team & Roles', url: '/settings/team', icon: IconUserCheck },
+            { 
+              title: 'Team & Roles', 
+              url: '/settings/team', 
+              icon: IconUserCheck,
+              // Only admins or superadmins should manage teams
+              roles: ['superadmin', 'admin'] 
+            },
             { title: 'Appearance', url: '/settings/appearance' },
           ],
         },

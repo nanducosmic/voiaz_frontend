@@ -1,6 +1,8 @@
 import { type ReactNode } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
+import { useSelector } from 'react-redux' 
 import { ChevronRight } from 'lucide-react'
+import { RootState } from '@/stores' 
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,39 +30,28 @@ import {
 } from '../ui/dropdown-menu'
 import {
   type NavCollapsible,
-  type NavItem,
   type NavLink,
   type NavGroup as NavGroupProps,
 } from './types'
 
-export function NavGroup({ title, items }: NavGroupProps) {
-  const { state, isMobile } = useSidebar()
-  const href = useLocation({ select: (location) => location.href })
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => {
-          const key = `${item.title}-${item.url}`
-
-          if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />
-
-          if (state === 'collapsed' && !isMobile)
-            return (
-              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
-            )
-
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
-  )
-}
+// --- HELPER COMPONENTS (Defined first to avoid "Cannot find name" errors) ---
 
 function NavBadge({ children }: { children: ReactNode }) {
   return <Badge className='rounded-full px-1 py-0 text-xs'>{children}</Badge>
 }
+
+function checkIsActive(href: string, item: any, mainNav = false) {
+  return (
+    href === item.url ||
+    href.split('?')[0] === item.url ||
+    !!item?.items?.filter((i: any) => i.url === href).length ||
+    (mainNav &&
+      href.split('/')[1] !== '' &&
+      href.split('/')[1] === item?.url?.split('/')[1])
+  )
+}
+
+// --- SUB-COMPONENTS ---
 
 function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   const { setOpenMobile } = useSidebar()
@@ -71,7 +62,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         isActive={checkIsActive(href, item)}
         tooltip={item.title}
       >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
+        <Link to={item.url as any} onClick={() => setOpenMobile(false)}>
           {item.icon && <item.icon />}
           <span>{item.title}</span>
           {item.badge && <NavBadge>{item.badge}</NavBadge>}
@@ -81,14 +72,15 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   )
 }
 
-function SidebarMenuCollapsible({
-  item,
-  href,
-}: {
-  item: NavCollapsible
-  href: string
-}) {
+function SidebarMenuCollapsible({ item, href }: { item: NavCollapsible; href: string }) {
   const { setOpenMobile } = useSidebar()
+  const { user } = useSelector((state: RootState) => state.auth)
+  const userRole = user?.role || 'user'
+  
+  const filteredSubItems = item.items.filter(sub => 
+    !sub.roles || sub.roles.includes(userRole)
+  )
+
   return (
     <Collapsible
       asChild
@@ -104,15 +96,15 @@ function SidebarMenuCollapsible({
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
           </SidebarMenuButton>
         </CollapsibleTrigger>
-        <CollapsibleContent className='CollapsibleContent'>
+        <CollapsibleContent>
           <SidebarMenuSub>
-            {item.items.map((subItem) => (
+            {filteredSubItems.map((subItem) => (
               <SidebarMenuSubItem key={subItem.title}>
                 <SidebarMenuSubButton
                   asChild
                   isActive={checkIsActive(href, subItem)}
                 >
-                  <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
+                  <Link to={subItem.url as any} onClick={() => setOpenMobile(false)}>
                     {subItem.icon && <subItem.icon />}
                     <span>{subItem.title}</span>
                     {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
@@ -127,13 +119,11 @@ function SidebarMenuCollapsible({
   )
 }
 
-function SidebarMenuCollapsedDropdown({
-  item,
-  href,
-}: {
-  item: NavCollapsible
-  href: string
-}) {
+function SidebarMenuCollapsedDropdown({ item, href }: { item: NavCollapsible; href: string }) {
+  const { user } = useSelector((state: RootState) => state.auth)
+  const userRole = user?.role || 'user'
+  const filteredSubItems = item.items.filter(sub => !sub.roles || sub.roles.includes(userRole))
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
@@ -153,10 +143,10 @@ function SidebarMenuCollapsedDropdown({
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {item.items.map((sub) => (
+          {filteredSubItems.map((sub) => (
             <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
               <Link
-                to={sub.url}
+                to={sub.url as any}
                 className={`${checkIsActive(href, sub) ? 'bg-secondary' : ''}`}
               >
                 {sub.icon && <sub.icon />}
@@ -173,13 +163,40 @@ function SidebarMenuCollapsedDropdown({
   )
 }
 
-function checkIsActive(href: string, item: NavItem, mainNav = false) {
+// --- MAIN EXPORT ---
+
+export function NavGroup({ title, items }: NavGroupProps) {
+  const { state, isMobile } = useSidebar()
+  const href = useLocation({ select: (location) => location.href })
+  
+  const { user } = useSelector((state: RootState) => state.auth)
+  const userRole = user?.role || 'user'
+
+  const filteredItems = items.filter((item) => {
+    if (!item.roles) return true
+    return item.roles.includes(userRole)
+  })
+
+  if (filteredItems.length === 0) return null
+
   return (
-    href === item.url || // /endpint?search=param
-    href.split('?')[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
-    (mainNav &&
-      href.split('/')[1] !== '' &&
-      href.split('/')[1] === item?.url?.split('/')[1])
+    <SidebarGroup>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarMenu>
+        {filteredItems.map((item) => {
+          const key = `${item.title}-${item.url}`
+
+          if (!item.items)
+            return <SidebarMenuLink key={key} item={item} href={href} />
+
+          if (state === 'collapsed' && !isMobile)
+            return (
+              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
+            )
+
+          return <SidebarMenuCollapsible key={key} item={item} href={href} />
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
   )
 }

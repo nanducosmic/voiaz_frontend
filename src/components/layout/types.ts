@@ -16,6 +16,7 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  roles?: string[] // Allow roles here
 }
 
 type NavLink = BaseNavItem & {
@@ -24,7 +25,8 @@ type NavLink = BaseNavItem & {
 }
 
 type NavCollapsible = BaseNavItem & {
-  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}) })[]
+  // Ensure sub-items also allow roles
+  items: (BaseNavItem & { url: LinkProps['to'] | (string & {}); roles?: string[] })[]
   url?: never
 }
 

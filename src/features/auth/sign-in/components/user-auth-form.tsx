@@ -1,13 +1,14 @@
-import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
+import { useDispatch, useSelector } from 'react-redux' // Added
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
-import { useAuthStore } from '@/stores/auth-store'
-import { sleep, cn } from '@/lib/utils'
+import { loginUser } from '@/stores/slices/authSlice' // Added
+import { AppDispatch, RootState } from '@/stores'      // Added
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -39,9 +40,11 @@ export function UserAuthForm({
   redirectTo,
   ...props
 }: UserAuthFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { auth } = useAuthStore()
+  const dispatch = useDispatch<AppDispatch>() // Initialize Redux Dispatch
+  
+  // Get loading state from Redux instead of local useState
+  const { loading } = useSelector((state: RootState) => state.auth)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,34 +54,23 @@ export function UserAuthForm({
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    // Dispatch the Redux Async Thunk
+    const resultAction = await dispatch(loginUser(data))
 
-    toast.promise(sleep(2000), {
-      loading: 'Signing in...',
-      success: () => {
-        setIsLoading(false)
+    if (loginUser.fulfilled.match(resultAction)) {
+      const user = resultAction.payload.user
+      toast.success(`Welcome back, ${user.name || data.email}!`)
 
-        // Mock successful authentication with expiry computed at success time
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        }
-
-        // Set user and access token
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
-
-        // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
-
-        return `Welcome back, ${data.email}!`
-      },
-      error: 'Error',
-    })
+      // MISSION: Redirect based on role
+      // If user.role is 'superadmin', they go to the same '/' but the Sidebar will change
+      const targetPath = redirectTo || '/'
+      navigate({ to: targetPath, replace: true })
+    } else {
+      // Show the error message from the backend
+      const errorMessage = resultAction.payload as string
+      toast.error(errorMessage || 'Invalid credentials')
+    }
   }
 
   return (
@@ -120,8 +112,9 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
-        <Button className='mt-2' disabled={isLoading}>
-          {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
+        {/* Changed isLoading to loading from Redux */}
+        <Button className='mt-2' disabled={loading}>
+          {loading ? <Loader2 className='animate-spin' /> : <LogIn />}
           Sign in
         </Button>
 
@@ -137,10 +130,10 @@ export function UserAuthForm({
         </div>
 
         <div className='grid grid-cols-2 gap-2'>
-          <Button variant='outline' type='button' disabled={isLoading}>
+          <Button variant='outline' type='button' disabled={loading}>
             <IconGithub className='h-4 w-4' /> GitHub
           </Button>
-          <Button variant='outline' type='button' disabled={isLoading}>
+          <Button variant='outline' type='button' disabled={loading}>
             <IconFacebook className='h-4 w-4' /> Facebook
           </Button>
         </div>
