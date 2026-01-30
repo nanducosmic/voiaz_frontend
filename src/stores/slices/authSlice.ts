@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import API from '@/services/api'; 
 
-// Define the shape of the User and Auth State
+// --- TYPES ---
 interface User {
   id: string;
   email: string;
@@ -13,6 +13,7 @@ interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
+  isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -22,36 +23,53 @@ interface LoginResponse {
   user: User;
 }
 
-// Check localStorage so user stays logged in on page refresh
-const storedUser = localStorage.getItem('user');
-const storedToken = localStorage.getItem('token');
+// ✅ FIX: Safe parsing to handle "undefined" strings in localStorage
+const getStoredData = () => {
+  const token = localStorage.getItem('token');
+  const userData = localStorage.getItem('user');
+
+  // If the browser literally stored the word "undefined" as a string, treat it as null
+  if (!token || token === "undefined") return { user: null, token: null };
+  
+  try {
+    return {
+      token,
+      user: userData && userData !== "undefined" ? JSON.parse(userData) : null
+    };
+  } catch (error) {
+    console.error("Failed to parse stored user data:", error);
+    return { user: null, token: null };
+  }
+};
+
+const stored = getStoredData();
 
 const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
-  token: storedToken || null,
+  user: stored.user,
+  token: stored.token,
+  isAuthenticated: !!stored.token, 
   loading: false,
   error: null,
 };
 
-// --- THE ASYNC CHUNK (THUNK) ---
+// --- THE ASYNC THUNK ---
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: any, { rejectWithValue }) => {
     try {
-      // Accessing the environment variable
-      const baseURL = import.meta.env.VITE_API_URL;
-      
-      const response = await axios.post<LoginResponse>(`${baseURL}/auth/login`, credentials);
-      
+      const response = await API.post<LoginResponse>('/auth/login', credentials);
       const { token, user } = response.data;
       
-      // Persist to local storage
+      // ✅ Check if data actually exists before saving
+      if (!token || !user) {
+        throw new Error("Invalid response from server");
+      }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
       return { token, user };
     } catch (err: any) {
-      // Handles cases where the server is down or returns an error message
       return rejectWithValue(err.response?.data?.message || 'Login failed');
     }
   }
@@ -64,7 +82,9 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.clear();
+      state.isAuthenticated = false;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     clearError: (state) => {
       state.error = null;
@@ -78,11 +98,15 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action: PayloadAction<LoginResponse>) => {
         state.loading = false;
+        state.isAuthenticated = true; 
         state.user = action.payload.user;
         state.token = action.payload.token;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null; // Reset on failure
+        state.token = null;
         state.error = action.payload as string;
       });
   },

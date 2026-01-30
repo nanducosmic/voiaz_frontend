@@ -1,12 +1,8 @@
 import axios from "axios";
 
-// This checks if you are running locally (development) or on the server (production)
-const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-// Toggle between your local Express server and Railway
-const API_BASE = isLocal 
-  ? "http://localhost:5000/api" 
-  : "https://bolnabackend1-production.up.railway.app/api";
+// Vite automatically handles environment detection. 
+// It will use the .env value if available, otherwise it falls back to the production URL.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://bolnabackend1-production.up.railway.app/api";
 
 const API = axios.create({
   baseURL: API_BASE,
@@ -17,9 +13,15 @@ const API = axios.create({
 
 // Attach Token to every request (Keeps you logged in)
 API.interceptors.request.use((config) => {
+  // Logic check: Try to get from 'auth' state or localStorage
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-  if (user && user.token) {
-    config.headers.Authorization = `Bearer ${user.token}`;
+  
+  // Some structures store token inside a nested 'user' object, others directly.
+  // This check covers both.
+  const token = user?.token || localStorage.getItem('token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 }, (error) => Promise.reject(error));
@@ -30,10 +32,17 @@ API.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       console.warn("Unauthorized attempt to:", error.config.url);
+      // Optional: Redirect to login or clear localStorage here
+      // localStorage.removeItem('user');
+      // window.location.href = '/sign-in';
     }
     return Promise.reject(error);
   }
 );
+
+/* --- AUTH EXPORTS (Add these so you can use them in authSlice) --- */
+export const login = (credentials: any) => API.post("/auth/login", credentials);
+export const register = (data: any) => API.post("/auth/register", data);
 
 /* --- CORE FEATURE EXPORTS --- */
 export const getDashboardStats = () => API.get("/dashboard/stats");
@@ -47,7 +56,7 @@ export const syncCallResults = () => API.post("/call-logs/sync");
 export const getFullHistory = (page = 1) => API.get(`/call-logs/history?page=${page}&limit=20`);
 export const getSystemStatus = () => API.get("/system-status");
 
-/* --- CAMPAIGN EXPORTS (The missing piece) --- */
+/* --- CAMPAIGN EXPORTS --- */
 export const triggerCampaign = (data: { type: string }) => API.post("/trigger-campaign", data);
 
 /* --- BILLING & INTEGRATIONS EXPORTS --- */
@@ -58,5 +67,6 @@ export const getCalendarStatus = () => API.get("/integrations/google-calendar/st
 export const getCredits = () => API.get('/credits/balance');
 export const getTransactionHistory = () => API.get('/credits/history');
 export const getAllTenants = () => API.get('/tenants');
-export const getAdminStats = () => API.get('/dashboard/stats'); // Adjust based on your actual admin route
+export const getAdminStats = () => API.get('/dashboard/stats'); 
+
 export default API;

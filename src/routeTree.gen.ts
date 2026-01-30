@@ -36,6 +36,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -62,9 +63,6 @@ const AuthenticatedCampaignsIndexLazyRouteImport = createFileRoute(
 )()
 const AuthenticatedBillingIndexLazyRouteImport = createFileRoute(
   '/_authenticated/billing/',
-)()
-const AuthenticatedAdminIndexLazyRouteImport = createFileRoute(
-  '/_authenticated/admin/',
 )()
 
 const CampaignsRoute = CampaignsRouteImport.update({
@@ -212,14 +210,6 @@ const AuthenticatedBillingIndexLazyRoute =
   } as any).lazy(() =>
     import('./routes/_authenticated/billing/index.lazy').then((d) => d.Route),
   )
-const AuthenticatedAdminIndexLazyRoute =
-  AuthenticatedAdminIndexLazyRouteImport.update({
-    id: '/admin/',
-    path: '/admin/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any).lazy(() =>
-    import('./routes/_authenticated/admin/index.lazy').then((d) => d.Route),
-  )
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
@@ -252,6 +242,13 @@ const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any).lazy(() =>
+  import('./routes/_authenticated/admin/index.lazy').then((d) => d.Route),
+)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -324,13 +321,13 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
-  '/admin/': typeof AuthenticatedAdminIndexLazyRoute
   '/billing/': typeof AuthenticatedBillingIndexLazyRoute
   '/campaigns/': typeof AuthenticatedCampaignsIndexLazyRoute
   '/contacts/': typeof AuthenticatedContactsIndexLazyRoute
@@ -362,13 +359,13 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
-  '/admin': typeof AuthenticatedAdminIndexLazyRoute
   '/contacts': typeof AuthenticatedContactsIndexLazyRoute
   '/history': typeof AuthenticatedHistoryIndexLazyRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexLazyRoute
@@ -403,13 +400,13 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
-  '/_authenticated/admin/': typeof AuthenticatedAdminIndexLazyRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexLazyRoute
   '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexLazyRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexLazyRoute
@@ -444,13 +441,13 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/admin/'
     | '/apps/'
     | '/chats/'
     | '/help-center/'
     | '/settings/'
     | '/tasks/'
     | '/users/'
-    | '/admin/'
     | '/billing/'
     | '/campaigns/'
     | '/contacts/'
@@ -482,13 +479,13 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/admin'
     | '/apps'
     | '/chats'
     | '/help-center'
     | '/settings'
     | '/tasks'
     | '/users'
-    | '/admin'
     | '/contacts'
     | '/history'
     | '/integrations'
@@ -522,13 +519,13 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/_authenticated/admin/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
-    | '/_authenticated/admin/'
     | '/_authenticated/billing/'
     | '/_authenticated/campaigns/'
     | '/_authenticated/contacts/'
@@ -732,13 +729,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBillingIndexLazyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexLazyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
@@ -779,6 +769,13 @@ declare module '@tanstack/react-router' {
       path: '/apps'
       fullPath: '/apps/'
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/clerk/_authenticated/user-management': {
@@ -867,12 +864,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
-  AuthenticatedAdminIndexLazyRoute: typeof AuthenticatedAdminIndexLazyRoute
   AuthenticatedBillingIndexLazyRoute: typeof AuthenticatedBillingIndexLazyRoute
   AuthenticatedCampaignsIndexLazyRoute: typeof AuthenticatedCampaignsIndexLazyRoute
   AuthenticatedContactsIndexLazyRoute: typeof AuthenticatedContactsIndexLazyRoute
@@ -885,12 +882,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
-  AuthenticatedAdminIndexLazyRoute: AuthenticatedAdminIndexLazyRoute,
   AuthenticatedBillingIndexLazyRoute: AuthenticatedBillingIndexLazyRoute,
   AuthenticatedCampaignsIndexLazyRoute: AuthenticatedCampaignsIndexLazyRoute,
   AuthenticatedContactsIndexLazyRoute: AuthenticatedContactsIndexLazyRoute,

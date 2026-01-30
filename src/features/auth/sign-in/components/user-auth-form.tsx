@@ -4,10 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
-import { useDispatch, useSelector } from 'react-redux' // Added
+import { useDispatch, useSelector } from 'react-redux'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
-import { loginUser } from '@/stores/slices/authSlice' // Added
-import { AppDispatch, RootState } from '@/stores'      // Added
+import { loginUser } from '@/stores/slices/authSlice'
+import { AppDispatch, RootState } from '@/stores'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,8 +22,8 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? 'Please enter your email' : undefined),
+  email: z.string().email({
+    message: 'Please enter a valid email address',
   }),
   password: z
     .string()
@@ -41,9 +41,8 @@ export function UserAuthForm({
   ...props
 }: UserAuthFormProps) {
   const navigate = useNavigate()
-  const dispatch = useDispatch<AppDispatch>() // Initialize Redux Dispatch
+  const dispatch = useDispatch<AppDispatch>()
   
-  // Get loading state from Redux instead of local useState
   const { loading } = useSelector((state: RootState) => state.auth)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -55,21 +54,29 @@ export function UserAuthForm({
   })
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    // Dispatch the Redux Async Thunk
     const resultAction = await dispatch(loginUser(data))
 
     if (loginUser.fulfilled.match(resultAction)) {
-      const user = resultAction.payload.user
-      toast.success(`Welcome back, ${user.name || data.email}!`)
+      // ✅ FIXED: Using optional chaining to prevent 'undefined' crash
+      const user = resultAction.payload?.user
+      const displayName = user?.name || data.email 
+      
+      toast.success(`Welcome back, ${displayName}!`)
 
-      // MISSION: Redirect based on role
-      // If user.role is 'superadmin', they go to the same '/' but the Sidebar will change
-      const targetPath = redirectTo || '/'
-      navigate({ to: targetPath, replace: true })
+      // ✅ Redirect Logic based on role
+      if (user?.role === 'superadmin') {
+        navigate({ to: '/admin', replace: true })
+      } else {
+        const targetPath = redirectTo || '/'
+        navigate({ to: targetPath, replace: true })
+      }
     } else {
-      // Show the error message from the backend
-      const errorMessage = resultAction.payload as string
-      toast.error(errorMessage || 'Invalid credentials')
+      // ✅ Handle payload properly if it's an object or a string
+      const errorMessage = typeof resultAction.payload === 'string' 
+        ? resultAction.payload 
+        : 'Invalid credentials'
+        
+      toast.error(errorMessage)
     }
   }
 
@@ -112,9 +119,8 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
-        {/* Changed isLoading to loading from Redux */}
-        <Button className='mt-2' disabled={loading}>
-          {loading ? <Loader2 className='animate-spin' /> : <LogIn />}
+        <Button className='mt-2' disabled={loading} type='submit'>
+          {loading ? <Loader2 className='h-4 w-4 animate-spin' /> : <LogIn className='h-4 w-4 mr-2' />}
           Sign in
         </Button>
 
@@ -131,10 +137,10 @@ export function UserAuthForm({
 
         <div className='grid grid-cols-2 gap-2'>
           <Button variant='outline' type='button' disabled={loading}>
-            <IconGithub className='h-4 w-4' /> GitHub
+            <IconGithub className='h-4 w-4 mr-2' /> GitHub
           </Button>
           <Button variant='outline' type='button' disabled={loading}>
-            <IconFacebook className='h-4 w-4' /> Facebook
+            <IconFacebook className='h-4 w-4 mr-2' /> Facebook
           </Button>
         </div>
       </form>
