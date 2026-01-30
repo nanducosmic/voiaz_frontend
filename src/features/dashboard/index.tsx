@@ -1,190 +1,179 @@
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Analytics } from './components/analytics'
+import { IconPhoneCall, IconClock, IconCalendarCheck, IconWallet } from '@tabler/icons-react'
 import { Overview } from './components/overview'
 import { RecentSales } from './components/recent-sales'
 
+// Define the shape of our stats for TypeScript
+interface DashboardStats {
+  totalCalls: number;
+  minutesUsed: number;
+  meetingsBooked: number;
+  balance: number;
+  totalRevenue?: number; // Optional in case backend uses 'balance' instead
+}
+
 export function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCalls: 0,
+    minutesUsed: 0,
+    meetingsBooked: 0,
+    balance: 0,
+    totalRevenue: 0
+  })
+
+  useEffect(() => {
+    // 1. Look for the token under all possible names
+    const rawToken = 
+      localStorage.getItem('token') || 
+      localStorage.getItem('accessToken') || 
+      localStorage.getItem('auth_token');
+
+    // Handle nested 'user' object if necessary
+    let token = rawToken;
+    if (!token) {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr);
+          token = userData.token || userData.accessToken;
+        } catch (e) {
+          console.error("Error parsing user from storage", e);
+        }
+      }
+    }
+
+    if (!token || token === 'null' || token === 'undefined') {
+      console.warn("No token found in storage.");
+      return;
+    }
+
+    // 2. Clean and Send
+    const cleanToken = token.replace(/['"]+/g, '').trim();
+
+    axios.get('http://localhost:5000/api/dashboard/stats', {
+      headers: { Authorization: `Bearer ${cleanToken}` }
+    })
+    .then(res => {
+      // If backend sends 'balance' but you want to display it as 'totalRevenue'
+      const data = res.data;
+      if (data.balance !== undefined && data.totalRevenue === undefined) {
+        data.totalRevenue = data.balance;
+      }
+      setStats(data);
+    })
+    .catch(err => {
+      console.error("Dashboard Stats Error:", err.response?.data || err.message);
+    });
+  }, []);
+
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
         <TopNav links={topNav} />
         <div className='ms-auto flex items-center space-x-4'>
           <Search />
           <ThemeSwitch />
-          <ConfigDrawer />
           <ProfileDropdown />
         </div>
       </Header>
 
-      {/* ===== Main ===== */}
       <Main>
         <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
+          <h1 className='text-2xl font-bold tracking-tight'>AI Command Center</h1>
           <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700">Start Campaign</Button>
           </div>
         </div>
-        <Tabs
-          orientation='vertical'
-          defaultValue='overview'
-          className='space-y-4'
-        >
-          <div className='w-full overflow-x-auto pb-2'>
-            <TabsList>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='analytics'>Analytics</TabsTrigger>
-              <TabsTrigger value='reports' disabled>
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value='notifications' disabled>
-                Notifications
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        
+        <Tabs defaultValue='overview' className='space-y-4'>
+          <TabsList>
+            <TabsTrigger value='overview'>Overview</TabsTrigger>
+            <TabsTrigger value='analytics'>Detailed Analytics</TabsTrigger>
+          </TabsList>
+
           <TabsContent value='overview' className='space-y-4'>
             <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+              {/* 1. Total Calls */}
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Total Revenue
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                  </svg>
+                  <CardTitle className='text-sm font-medium'>Total Calls</CardTitle>
+                  <IconPhoneCall className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>$45,231.89</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +20.1% from last month
+                  <div className='text-2xl font-bold'>{stats.totalCalls}</div>
+                  <p className='text-xs text-muted-foreground'>Lifetime calls made</p>
+                </CardContent>
+              </Card>
+
+              {/* 2. Minutes Used */}
+              <Card>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                  <CardTitle className='text-sm font-medium'>Airtime Used</CardTitle>
+                  <IconClock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className='text-2xl font-bold'>{stats.minutesUsed}m</div>
+                  <p className='text-xs text-muted-foreground'>Talk time consumption</p>
+                </CardContent>
+              </Card>
+
+              {/* 3. Meetings Booked */}
+              <Card>
+                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                  <CardTitle className='text-sm font-medium'>Meetings Booked</CardTitle>
+                  <IconCalendarCheck className="h-4 w-4 text-emerald-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className='text-2xl font-bold'>{stats.meetingsBooked}</div>
+                  <p className='text-xs text-emerald-600 font-medium'>
+                    Success Rate: {stats.totalCalls > 0 ? ((stats.meetingsBooked / stats.totalCalls) * 100).toFixed(1) : 0}%
                   </p>
                 </CardContent>
               </Card>
+
+              {/* 4. Credit Balance / Revenue */}
               <Card>
                 <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Subscriptions
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                    <circle cx='9' cy='7' r='4' />
-                    <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-                  </svg>
+                  <CardTitle className='text-sm font-medium'>Wallet Balance</CardTitle>
+                  <IconWallet className="h-4 w-4 text-indigo-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className='text-2xl font-bold'>+2350</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +180.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Sales</CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <rect width='20' height='14' x='2' y='5' rx='2' />
-                    <path d='M2 10h20' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+12,234</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +19% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Active Now
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+573</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +201 since last hour
-                  </p>
+                  {/* Using totalRevenue with a fallback to balance */}
+                  <div className='text-2xl font-bold'>
+                    ${(stats.totalRevenue ?? stats.balance ?? 0).toFixed(2)}
+                  </div>
+                  <p className='text-xs text-muted-foreground'>Available for calls</p>
                 </CardContent>
               </Card>
             </div>
+
             <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
               <Card className='col-span-1 lg:col-span-4'>
-                <CardHeader>
-                  <CardTitle>Overview</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Call Volume Overview</CardTitle></CardHeader>
                 <CardContent className='ps-2'>
                   <Overview />
                 </CardContent>
               </Card>
               <Card className='col-span-1 lg:col-span-3'>
                 <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
-                  <CardDescription>
-                    You made 265 sales this month.
-                  </CardDescription>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>Latest AI interactions</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <RecentSales />
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-          <TabsContent value='analytics' className='space-y-4'>
-            <Analytics />
           </TabsContent>
         </Tabs>
       </Main>
@@ -193,28 +182,8 @@ export function Dashboard() {
 }
 
 const topNav = [
-  {
-    title: 'Overview',
-    href: 'dashboard/overview',
-    isActive: true,
-    disabled: false,
-  },
-  {
-    title: 'Customers',
-    href: 'dashboard/customers',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Products',
-    href: 'dashboard/products',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Settings',
-    href: 'dashboard/settings',
-    isActive: false,
-    disabled: true,
-  },
+  { title: 'Overview', href: '/dashboard', isActive: true, disabled: false },
+  { title: 'Agents', href: '/agents', isActive: false, disabled: false },
+  { title: 'Campaigns', href: '/campaigns', isActive: false, disabled: false },
+  { title: 'Billing', href: '/billing', isActive: false, disabled: false },
 ]

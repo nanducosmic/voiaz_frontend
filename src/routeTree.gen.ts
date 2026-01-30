@@ -8,7 +8,12 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CampaignsRouteImport } from './routes/campaigns'
+import { Route as BillingRouteImport } from './routes/billing'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -40,6 +45,43 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
+const AuthenticatedKnowledgeBaseIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/knowledge-base/',
+)()
+const AuthenticatedIntegrationsIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/integrations/',
+)()
+const AuthenticatedHistoryIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/history/',
+)()
+const AuthenticatedContactsIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/contacts/',
+)()
+const AuthenticatedCampaignsIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/campaigns/',
+)()
+const AuthenticatedBillingIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/billing/',
+)()
+const AuthenticatedAdminIndexLazyRouteImport = createFileRoute(
+  '/_authenticated/admin/',
+)()
+
+const CampaignsRoute = CampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
   path: '/clerk',
@@ -118,6 +160,66 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedKnowledgeBaseIndexLazyRoute =
+  AuthenticatedKnowledgeBaseIndexLazyRouteImport.update({
+    id: '/knowledge-base/',
+    path: '/knowledge-base/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/knowledge-base/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const AuthenticatedIntegrationsIndexLazyRoute =
+  AuthenticatedIntegrationsIndexLazyRouteImport.update({
+    id: '/integrations/',
+    path: '/integrations/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/integrations/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const AuthenticatedHistoryIndexLazyRoute =
+  AuthenticatedHistoryIndexLazyRouteImport.update({
+    id: '/history/',
+    path: '/history/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/history/index.lazy').then((d) => d.Route),
+  )
+const AuthenticatedContactsIndexLazyRoute =
+  AuthenticatedContactsIndexLazyRouteImport.update({
+    id: '/contacts/',
+    path: '/contacts/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/contacts/index.lazy').then((d) => d.Route),
+  )
+const AuthenticatedCampaignsIndexLazyRoute =
+  AuthenticatedCampaignsIndexLazyRouteImport.update({
+    id: '/campaigns/',
+    path: '/campaigns/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/campaigns/index.lazy').then((d) => d.Route),
+  )
+const AuthenticatedBillingIndexLazyRoute =
+  AuthenticatedBillingIndexLazyRouteImport.update({
+    id: '/billing/',
+    path: '/billing/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/billing/index.lazy').then((d) => d.Route),
+  )
+const AuthenticatedAdminIndexLazyRoute =
+  AuthenticatedAdminIndexLazyRouteImport.update({
+    id: '/admin/',
+    path: '/admin/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_authenticated/admin/index.lazy').then((d) => d.Route),
+  )
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
@@ -198,7 +300,11 @@ const AuthenticatedErrorsErrorRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof AuthenticatedIndexRoute
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/agents': typeof AgentsRoute
+  '/billing': typeof BillingRoute
+  '/campaigns': typeof CampaignsRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -210,7 +316,6 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
-  '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -219,15 +324,25 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/apps/': typeof AuthenticatedAppsIndexRoute
+  '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
+  '/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/users/': typeof AuthenticatedUsersIndexRoute
+  '/admin/': typeof AuthenticatedAdminIndexLazyRoute
+  '/billing/': typeof AuthenticatedBillingIndexLazyRoute
+  '/campaigns/': typeof AuthenticatedCampaignsIndexLazyRoute
+  '/contacts/': typeof AuthenticatedContactsIndexLazyRoute
+  '/history/': typeof AuthenticatedHistoryIndexLazyRoute
+  '/integrations/': typeof AuthenticatedIntegrationsIndexLazyRoute
+  '/knowledge-base/': typeof AuthenticatedKnowledgeBaseIndexLazyRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/agents': typeof AgentsRoute
+  '/billing': typeof AuthenticatedBillingIndexLazyRoute
+  '/campaigns': typeof AuthenticatedCampaignsIndexLazyRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -253,11 +368,19 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/admin': typeof AuthenticatedAdminIndexLazyRoute
+  '/contacts': typeof AuthenticatedContactsIndexLazyRoute
+  '/history': typeof AuthenticatedHistoryIndexLazyRoute
+  '/integrations': typeof AuthenticatedIntegrationsIndexLazyRoute
+  '/knowledge-base': typeof AuthenticatedKnowledgeBaseIndexLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/agents': typeof AgentsRoute
+  '/billing': typeof BillingRoute
+  '/campaigns': typeof CampaignsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -286,11 +409,22 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexLazyRoute
+  '/_authenticated/billing/': typeof AuthenticatedBillingIndexLazyRoute
+  '/_authenticated/campaigns/': typeof AuthenticatedCampaignsIndexLazyRoute
+  '/_authenticated/contacts/': typeof AuthenticatedContactsIndexLazyRoute
+  '/_authenticated/history/': typeof AuthenticatedHistoryIndexLazyRoute
+  '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexLazyRoute
+  '/_authenticated/knowledge-base/': typeof AuthenticatedKnowledgeBaseIndexLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/clerk'
+    | '/agents'
+    | '/billing'
+    | '/campaigns'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -302,7 +436,6 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
-    | '/'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -311,15 +444,25 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
-    | '/help-center'
+    | '/apps/'
+    | '/chats/'
+    | '/help-center/'
     | '/settings/'
-    | '/tasks'
-    | '/users'
+    | '/tasks/'
+    | '/users/'
+    | '/admin/'
+    | '/billing/'
+    | '/campaigns/'
+    | '/contacts/'
+    | '/history/'
+    | '/integrations/'
+    | '/knowledge-base/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
+    | '/agents'
+    | '/billing'
+    | '/campaigns'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -345,10 +488,18 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/users'
+    | '/admin'
+    | '/contacts'
+    | '/history'
+    | '/integrations'
+    | '/knowledge-base'
   id:
     | '__root__'
     | '/_authenticated'
     | '/clerk'
+    | '/agents'
+    | '/billing'
+    | '/campaigns'
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
@@ -377,11 +528,21 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/admin/'
+    | '/_authenticated/billing/'
+    | '/_authenticated/campaigns/'
+    | '/_authenticated/contacts/'
+    | '/_authenticated/history/'
+    | '/_authenticated/integrations/'
+    | '/_authenticated/knowledge-base/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  AgentsRoute: typeof AgentsRoute
+  BillingRoute: typeof BillingRoute
+  CampaignsRoute: typeof CampaignsRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -396,6 +557,27 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/campaigns': {
+      id: '/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof CampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clerk': {
       id: '/clerk'
       path: '/clerk'
@@ -406,7 +588,7 @@ declare module '@tanstack/react-router' {
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -508,17 +690,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/knowledge-base/': {
+      id: '/_authenticated/knowledge-base/'
+      path: '/knowledge-base'
+      fullPath: '/knowledge-base/'
+      preLoaderRoute: typeof AuthenticatedKnowledgeBaseIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/integrations/': {
+      id: '/_authenticated/integrations/'
+      path: '/integrations'
+      fullPath: '/integrations/'
+      preLoaderRoute: typeof AuthenticatedIntegrationsIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/history/': {
+      id: '/_authenticated/history/'
+      path: '/history'
+      fullPath: '/history/'
+      preLoaderRoute: typeof AuthenticatedHistoryIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contacts/': {
+      id: '/_authenticated/contacts/'
+      path: '/contacts'
+      fullPath: '/contacts/'
+      preLoaderRoute: typeof AuthenticatedContactsIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/campaigns/': {
+      id: '/_authenticated/campaigns/'
+      path: '/campaigns'
+      fullPath: '/campaigns/'
+      preLoaderRoute: typeof AuthenticatedCampaignsIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/billing/': {
+      id: '/_authenticated/billing/'
+      path: '/billing'
+      fullPath: '/billing/'
+      preLoaderRoute: typeof AuthenticatedBillingIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexLazyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
-      fullPath: '/users'
+      fullPath: '/users/'
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
       id: '/_authenticated/tasks/'
       path: '/tasks'
-      fullPath: '/tasks'
+      fullPath: '/tasks/'
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
@@ -532,21 +763,21 @@ declare module '@tanstack/react-router' {
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
-      fullPath: '/help-center'
+      fullPath: '/help-center/'
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chats/': {
       id: '/_authenticated/chats/'
       path: '/chats'
-      fullPath: '/chats'
+      fullPath: '/chats/'
       preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/apps/': {
       id: '/_authenticated/apps/'
       path: '/apps'
-      fullPath: '/apps'
+      fullPath: '/apps/'
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
@@ -641,6 +872,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedAdminIndexLazyRoute: typeof AuthenticatedAdminIndexLazyRoute
+  AuthenticatedBillingIndexLazyRoute: typeof AuthenticatedBillingIndexLazyRoute
+  AuthenticatedCampaignsIndexLazyRoute: typeof AuthenticatedCampaignsIndexLazyRoute
+  AuthenticatedContactsIndexLazyRoute: typeof AuthenticatedContactsIndexLazyRoute
+  AuthenticatedHistoryIndexLazyRoute: typeof AuthenticatedHistoryIndexLazyRoute
+  AuthenticatedIntegrationsIndexLazyRoute: typeof AuthenticatedIntegrationsIndexLazyRoute
+  AuthenticatedKnowledgeBaseIndexLazyRoute: typeof AuthenticatedKnowledgeBaseIndexLazyRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -652,6 +890,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedAdminIndexLazyRoute: AuthenticatedAdminIndexLazyRoute,
+  AuthenticatedBillingIndexLazyRoute: AuthenticatedBillingIndexLazyRoute,
+  AuthenticatedCampaignsIndexLazyRoute: AuthenticatedCampaignsIndexLazyRoute,
+  AuthenticatedContactsIndexLazyRoute: AuthenticatedContactsIndexLazyRoute,
+  AuthenticatedHistoryIndexLazyRoute: AuthenticatedHistoryIndexLazyRoute,
+  AuthenticatedIntegrationsIndexLazyRoute:
+    AuthenticatedIntegrationsIndexLazyRoute,
+  AuthenticatedKnowledgeBaseIndexLazyRoute:
+    AuthenticatedKnowledgeBaseIndexLazyRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -703,6 +950,9 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  AgentsRoute: AgentsRoute,
+  BillingRoute: BillingRoute,
+  CampaignsRoute: CampaignsRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,

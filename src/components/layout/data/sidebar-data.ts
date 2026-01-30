@@ -1,51 +1,29 @@
 import {
-  Construction,
-  LayoutDashboard,
-  Monitor,
-  Bug,
-  ListTodo,
-  FileX,
-  HelpCircle,
-  Lock,
-  Bell,
-  Package,
-  Palette,
-  ServerOff,
-  Settings,
-  Wrench,
-  UserCog,
-  UserX,
-  Users,
-  MessagesSquare,
-  ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
-} from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
-import { type SidebarData } from '../types'
+  IconLayoutDashboard,
+  IconPhoneCall,
+  IconUsers,
+  IconBook,
+  IconSettings,
+  IconUserShield,
+  IconCommand,
+  IconCreditCard,
+  IconLink,
+  IconUserCheck,
+  IconHelpCircle,
+  IconHistory, // Added for the new Call History page
+} from '@tabler/icons-react'
 
-export const sidebarData: SidebarData = {
+export const sidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
+    name: 'Admin User',
+    email: 'admin@example.com',
+    avatar: '/avatars/01.png',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
+      name: 'AI Booking Inc',
+      logo: IconCommand,
       plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
     },
   ],
   navGroups: [
@@ -55,108 +33,47 @@ export const sidebarData: SidebarData = {
         {
           title: 'Dashboard',
           url: '/',
-          icon: LayoutDashboard,
+          icon: IconLayoutDashboard,
         },
         {
-          title: 'Tasks',
-          url: '/tasks',
-          icon: ListTodo,
+          title: 'AI Campaigns',
+          url: '/campaigns',
+          icon: IconPhoneCall,
         },
         {
-          title: 'Apps',
-          url: '/apps',
-          icon: Package,
+          title: 'Call History', // New item added here
+          url: '/history',
+          icon: IconHistory,
         },
         {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
+          title: 'Contacts Import',
+          url: '/contacts',
+          icon: IconUsers,
         },
         {
-          title: 'Users',
-          url: '/users',
-          icon: Users,
-        },
-        {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
+          title: 'AI Training (KB)',
+          url: '/knowledge-base',
+          icon: IconBook,
         },
       ],
     },
     {
-      title: 'Pages',
+      title: 'Organization',
       items: [
         {
-          title: 'Auth',
-          icon: ShieldCheck,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
-          ],
+          title: 'Billing & Recharge',
+          url: '/billing',
+          icon: IconCreditCard,
         },
         {
-          title: 'Errors',
-          icon: Bug,
-          items: [
-            {
-              title: 'Unauthorized',
-              url: '/errors/unauthorized',
-              icon: Lock,
-            },
-            {
-              title: 'Forbidden',
-              url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
-            },
-          ],
+          title: 'Integrations',
+          url: '/integrations',
+          icon: IconLink,
+        },
+        {
+          title: 'Admin Panel',
+          url: '/admin',
+          icon: IconUserShield,
         },
       ],
     },
@@ -165,39 +82,18 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Settings',
-          icon: Settings,
+          icon: IconSettings,
           items: [
-            {
-              title: 'Profile',
-              url: '/settings',
-              icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
-            },
+            { title: 'Profile', url: '/settings/profile' },
+            { title: 'Account', url: '/settings/account' },
+            { title: 'Team & Roles', url: '/settings/team', icon: IconUserCheck },
+            { title: 'Appearance', url: '/settings/appearance' },
           ],
         },
         {
           title: 'Help Center',
-          url: '/help-center',
-          icon: HelpCircle,
+          url: '/help',
+          icon: IconHelpCircle,
         },
       ],
     },
