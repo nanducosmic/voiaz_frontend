@@ -64,10 +64,10 @@ export function UserAuthForm({
       toast.success(`Welcome back, ${displayName}!`)
 
       // ✅ Redirect Logic based on role
-      if (user?.role === 'superadmin') {
+      if (user?.role === 'super_admin') {
         navigate({ to: '/admin', replace: true })
       } else {
-        const targetPath = redirectTo || '/'
+        const targetPath = redirectTo || '/dashboard'
         navigate({ to: targetPath, replace: true })
       }
     } else {

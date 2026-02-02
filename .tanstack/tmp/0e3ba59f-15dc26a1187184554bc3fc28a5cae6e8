@@ -1,0 +1,46 @@
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+
+export const Route = createFileRoute('/_authenticated/dashboard/')({
+  // We use context to ensure we are looking at the live Auth state
+  beforeLoad: ({ context, location }) => {
+    // 1. Check LocalStorage AND the Auth Context (Redux)
+    const storedToken = localStorage.getItem('token')
+    const contextToken = context.auth?.token // Assuming your auth slice has 'token'
+    
+    const activeToken = storedToken || contextToken
+
+    // 2. Strict validation to prevent "undefined" string bypass
+    const isAuthenticated = 
+      !!activeToken && 
+      activeToken !== 'undefined' && 
+      activeToken !== 'null' &&
+      activeToken.length > 10
+
+    console.log('🛡️ [Guard] Path:', location.href);
+    console.log('🛡️ [Guard] Status:', isAuthenticated ? '✅ AUTHORIZED' : '🚫 DENIED');
+
+    if (!isAuthenticated) {
+      console.warn('⚠️ Unauthorized access attempt. Redirecting to login...');
+      
+      // We 'throw' the redirect to stop the route from even attempting to load
+      throw redirect({
+        to: '/sign-in',
+        search: {
+          // This saves where the user was trying to go
+          redirect: location.href,
+        },
+      })
+    }
+
+    // Return the auth state so it's available to all child routes (dashboard, etc.)
+    return {
+      auth: context.auth,
+    }
+  },
+  component: () => (
+    <AuthenticatedLayout>
+      <Outlet />
+    </AuthenticatedLayout>
+  ),
+})

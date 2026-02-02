@@ -20,7 +20,7 @@ type TeamSwitcherProps = {
   teams: {
     name: string
     logo: React.ElementType
-    plan: string
+    plan?: string
   }[]
 }
 

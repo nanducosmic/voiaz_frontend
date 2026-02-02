@@ -1,6 +1,6 @@
-# Shadcn Admin Dashboard
+# Voaiz.com by Richinnovations
 
-Admin Dashboard UI crafted with Shadcn and Vite. Built with responsiveness and accessibility in mind.
+Admin Dashboard UI for Voaiz.com by Richinnovations. Built with responsiveness and accessibility in mind.
 
 ![alt text](public/images/shadcn-admin.png)
 

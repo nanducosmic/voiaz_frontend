@@ -1,167 +1,155 @@
-import { useState, useEffect } from 'react'
-import { createLazyFileRoute } from '@tanstack/react-router'
-import api from '@/lib/api' // Using the central API instance
+import { useState } from 'react';
+import { useRouter, useSearch, createLazyFileRoute } from '@tanstack/react-router';
+import { useLoaderData } from '@tanstack/react-router';
+// Import the specific function to ensure the correct baseURL is used
+import api, { getFullHistory } from '@/services/api'; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { 
   IconHistory, 
   IconMessage2, 
   IconPhoneOutgoing, 
-  IconClock, 
-  IconUser,
-  IconChevronRight,
-  IconLoader2
+  IconChevronLeft,
+  IconChevronRight
 } from '@tabler/icons-react'
 
+// ... Keep your CallLog and CallHistoryResponse interfaces ...
+
 export const Route = createLazyFileRoute('/_authenticated/history/')({
+  validateSearch: (search: Record<string, unknown>): HistorySearch => {
+    return {
+      page: (search.page as string) || '1',
+    }
+  },
+  loader: async ({ search }) => {
+    const page = Number(search.page) || 1;
+    const url = `/call-logs/history?page=${page}`;
+    console.log('Fetching from backend:', url);
+    const res = await api.get(url);
+    return res.data;
+  },
+  // Link the component directly here
   component: CallHistoryPage,
 })
 
 function CallHistoryPage() {
-  const [logs, setLogs] = useState<any[]>([])
-  const [selectedCall, setSelectedCall] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const loaderData = useLoaderData({ from: '/_authenticated/history/' });
+  const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      setLoading(true)
-      try {
-        // CLEAN: URL is relative, token is handled automatically
-        const res = await api.get('/calls/logs')
-        
-        // Defensive check: Handle different backend response structures
-        const rawData = res.data?.data || res.data || []
-        setLogs(Array.isArray(rawData) ? rawData : [])
-      } catch (err) {
-        console.error("Fetch failed:", err)
-        setLogs([])
-      } finally {
-        setLoading(false)
-      }
-    }
+  // If the loader fails or returns empty, show this state
+  if (!loaderData || !loaderData.calls) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] p-12 text-center">
+        <IconHistory size={64} className="mb-4 text-red-400 opacity-20" />
+        <h2 className="text-xl font-bold mb-2">Connection Issue</h2>
+        <p className="text-muted-foreground max-w-xs">
+          Could not fetch data from your API. Ensure your backend server is running on port 5000.
+        </p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
 
-    fetchHistory()
-  }, [])
+  const { calls, pagination } = loaderData;
 
   return (
     <div className='p-6 space-y-6'>
-      <div className="flex items-center gap-2">
-        <IconHistory size={32} className="text-indigo-600" />
-        <h1 className='text-2xl font-bold tracking-tight'>Call History</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <IconHistory size={32} className="text-indigo-600" />
+          <h1 className='text-2xl font-bold tracking-tight'>Call History</h1>
+        </div>
+        {pagination.grandTotalBurn > 0 && (
+          <Badge variant="outline" className="px-3 py-1 text-xs font-mono bg-white shadow-sm border-indigo-100 text-indigo-700">
+            Total Burn: ${pagination.grandTotalBurn.toFixed(2)}
+          </Badge>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* Left Side: Call List */}
-        <Card className="lg:col-span-2 h-[calc(100vh-180px)] flex flex-col shadow-sm overflow-hidden">
-          <CardHeader className='border-b bg-muted/5'>
-            <CardTitle className='text-sm uppercase tracking-widest text-muted-foreground'>Recent Interactions</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-y-auto flex-1 scrollbar-thin">
-            <div className="divide-y">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-                  <IconLoader2 className="animate-spin mb-2" size={24} />
-                  <p className="text-xs italic">Syncing logs...</p>
-                </div>
-              ) : logs.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground text-sm italic">
-                  No calls recorded yet.
-                </div>
-              ) : (
-                logs.map((log) => (
-                  <div 
-                    key={log._id} 
-                    onClick={() => setSelectedCall(log)}
-                    className={`p-4 cursor-pointer transition-all hover:bg-muted/50 border-l-4 ${
-                      selectedCall?._id === log._id 
-                        ? 'bg-indigo-50/50 border-indigo-500' 
-                        : 'border-transparent'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="font-bold text-sm flex items-center gap-2">
-                        <IconUser size={14} className='text-indigo-400' />
-                        {log.contactName || 'Prospect'}
-                      </p>
-                      <Badge variant={log.status === 'completed' ? 'default' : 'outline'} className="text-[9px] uppercase">
-                        {log.duration || '0s'}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground font-mono">{log.to || log.contactPhone}</p>
-                    <div className="mt-3 flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <IconClock size={12}/> 
-                        {new Date(log.createdAt).toLocaleString()}
-                      </span>
-                      <IconChevronRight size={14} className={selectedCall?._id === log._id ? 'text-indigo-500' : 'text-slate-300'} />
-                    </div>
+        {/* Call List Sidebar */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="h-[calc(100vh-250px)] flex flex-col shadow-sm overflow-hidden border-slate-200">
+            <CardHeader className='border-b bg-slate-50/50 py-3'>
+              <CardTitle className='text-[10px] uppercase tracking-widest text-muted-foreground font-bold'>
+                Recent Interactions ({pagination.totalCalls})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 overflow-y-auto flex-1 scrollbar-thin">
+              {calls.map((call) => (
+                <div
+                  key={call._id}
+                  onClick={() => setSelectedCall(call)}
+                  className={`p-4 cursor-pointer transition-all border-l-4 ${
+                    selectedCall?._id === call._id ? 'bg-indigo-50 border-indigo-500' : 'border-transparent hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <p className="font-bold text-sm text-slate-800">{call.phone}</p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(call.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  <Badge variant="secondary" className="text-[9px] mt-1">{call.status}</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          
+          {/* Pagination */}
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" size="sm" 
+              disabled={!pagination.hasPrevPage}
+              onClick={() => router.navigate({ search: { page: (pagination.currentPage - 1).toString() } })}
+            >
+              <IconChevronLeft size={16} /> Previous
+            </Button>
+            <span className="text-xs font-bold">Page {pagination.currentPage} / {pagination.totalPages}</span>
+            <Button 
+              variant="ghost" size="sm" 
+              disabled={!pagination.hasNextPage}
+              onClick={() => router.navigate({ search: { page: (pagination.currentPage + 1).toString() } })}
+            >
+              Next <IconChevronRight size={16} />
+            </Button>
+          </div>
+        </div>
 
-        {/* Right Side: Transcript & Details */}
-        <Card className="lg:col-span-3 h-[calc(100vh-180px)] flex flex-col shadow-md overflow-hidden">
-          <CardHeader className="border-b bg-muted/5">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-full text-indigo-600">
-                    <IconMessage2 size={20} />
-                </div>
-                <div>
-                    <CardTitle className="text-lg">Conversation Intel</CardTitle>
-                    <CardDescription>AI Transcript and metadata</CardDescription>
-                </div>
-            </div>
+        {/* Conversation Detail */}
+        <Card className="lg:col-span-3 h-[calc(100vh-180px)] shadow-md overflow-hidden border-slate-200">
+          <CardHeader className="border-b bg-slate-50/50">
+            <CardTitle className="text-lg">Conversation Intel</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-6 scrollbar-thin bg-slate-50/30">
+          <CardContent className="p-6 overflow-y-auto h-full scrollbar-thin">
             {selectedCall ? (
               <div className="space-y-6">
-                {/* Transcript Display */}
-                <div className="rounded-xl border bg-white p-6 shadow-sm border-indigo-50">
-                  <h4 className="text-[10px] font-bold uppercase text-indigo-500 mb-4 tracking-widest">Full Transcript</h4>
-                   {selectedCall.transcript ? (
-                     <div className="space-y-4">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 italic border-l-2 border-indigo-100 pl-4">
-                          "{selectedCall.transcript}"
-                        </p>
-                     </div>
-                   ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground italic">
-                        <IconPhoneOutgoing size={40} className="mb-2 opacity-10" />
-                        <p className="text-sm">No speech was captured for this interaction.</p>
-                    </div>
-                   )}
+                <div className="bg-white p-4 rounded-lg border border-slate-200">
+                  <h4 className="text-[10px] font-bold uppercase text-indigo-500 mb-2">Transcript</h4>
+                  <p className="text-sm text-slate-700 leading-relaxed">{selectedCall.transcript || "No transcript available."}</p>
                 </div>
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className='p-4 rounded-xl bg-white border shadow-sm'>
-                        <p className='text-muted-foreground mb-1 uppercase font-bold text-[9px] tracking-tighter'>Session ID</p>
-                        <p className='font-mono text-[10px] break-all'>{selectedCall._id}</p>
-                    </div>
-                    <div className='p-4 rounded-xl bg-white border shadow-sm'>
-                        <p className='text-muted-foreground mb-1 uppercase font-bold text-[9px] tracking-tighter'>Agent Assigned</p>
-                        <p className='text-sm font-medium'>{selectedCall.agentId?.name || 'Standard Agent'}</p>
-                    </div>
+                <div className="bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
+                  <h4 className="text-[10px] font-bold uppercase text-indigo-600 mb-2">AI Summary</h4>
+                  <p className="text-sm text-slate-800 font-medium">{selectedCall.summary || "Summary not generated."}</p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center space-y-4 p-12">
-                <div className="relative">
-                  <IconPhoneOutgoing size={64} className="opacity-10" />
-                  <IconHistory size={24} className="absolute -bottom-2 -right-2 text-indigo-200" />
-                </div>
-                <div className="space-y-1">
-                  <p className='font-medium text-slate-900 text-sm'>No Call Selected</p>
-                  <p className='text-xs max-w-[220px]'>Pick a record from the history panel to analyze the AI performance and transcripts.</p>
-                </div>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-30">
+                <IconPhoneOutgoing size={48} />
+                <p className="text-sm font-bold mt-2">SELECT A CALL TO VIEW DETAILS</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

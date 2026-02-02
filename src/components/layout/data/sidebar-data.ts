@@ -1,17 +1,18 @@
+
 import {
   IconLayoutDashboard,
   IconPhoneCall,
   IconUsers,
   IconBook,
   IconSettings,
-  IconUserShield,
   IconCommand,
   IconCreditCard,
   IconLink,
   IconUserCheck,
   IconHelpCircle,
   IconHistory,
-} from '@tabler/icons-react'
+} from '@tabler/icons-react';
+import { Users } from 'lucide-react';
 
 export const sidebarData = {
   user: {
@@ -21,9 +22,9 @@ export const sidebarData = {
   },
   teams: [
     {
-      name: 'AI Booking Inc',
+      name: 'Voaiz.com by Richinnovations',
       logo: IconCommand,
-      plan: 'Enterprise',
+      // plan removed
     },
   ],
   navGroups: [
@@ -32,7 +33,7 @@ export const sidebarData = {
       items: [
         {
           title: 'Dashboard',
-          url: '/',
+          url: '/dashboard',
           icon: IconLayoutDashboard,
         },
         {
@@ -71,11 +72,16 @@ export const sidebarData = {
           icon: IconLink,
         },
         {
-          title: 'Admin Panel',
-          url: '/admin',
-          icon: IconUserShield,
-          // MISSION: Restrict to superadmin only
-          roles: ['superadmin'], 
+          title: 'Agents',
+          url: '/agents',
+          icon: IconUserCheck,
+          roles: ['super_admin'], // Assuming only super_admin manages agents
+        },
+        {
+          title: 'Users',
+          url: '/users',
+          icon: Users,
+          roles: ['super_admin'],
         },
       ],
     },
@@ -92,8 +98,8 @@ export const sidebarData = {
               title: 'Team & Roles', 
               url: '/settings/team', 
               icon: IconUserCheck,
-              // Only admins or superadmins should manage teams
-              roles: ['superadmin', 'admin'] 
+              // Only admins or super_admins should manage teams
+              roles: ['super_admin', 'admin'] 
             },
             { title: 'Appearance', url: '/settings/appearance' },
           ],

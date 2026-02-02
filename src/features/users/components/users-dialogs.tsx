@@ -2,7 +2,8 @@ import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
 import { useUsers } from './users-provider'
-
+import { UsersEditBalanceDialog } from './users-edit-balance-dialog'
+import { UsersAssignNumberDialog } from './users-assign-number-dialog'
 export function UsersDialogs() {
   const { open, setOpen, currentRow, setCurrentRow } = useUsers()
   return (
@@ -44,6 +45,10 @@ export function UsersDialogs() {
             }}
             currentRow={currentRow}
           />
+
+          <UsersEditBalanceDialog />
+
+          <UsersAssignNumberDialog />
         </>
       )}
     </>

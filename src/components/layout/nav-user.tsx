@@ -34,9 +34,24 @@ type NavUserProps = {
   }
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function NavUser({ user }: { user: NavUserProps['user'] | null }) {
   const { isMobile } = useSidebar()
   const [open, setOpen] = useDialogState()
+
+  // ✅ Fallback data logic: Prevents 500 errors when user is null
+  const safeUser = {
+    name: user?.name || 'User',
+    email: user?.email || 'Not logged in',
+    avatar: user?.avatar || '',
+  }
+
+  // Helper for initials
+  const initials = safeUser.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
 
   return (
     <>
@@ -49,12 +64,12 @@ export function NavUser({ user }: NavUserProps) {
                 className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
               >
                 <Avatar className='h-8 w-8 rounded-lg'>
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                  <AvatarImage src={safeUser.avatar} alt={safeUser.name} />
+                  <AvatarFallback className='rounded-lg'>{initials}</AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
-                  <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email}</span>
+                  <span className='truncate font-semibold'>{safeUser.name}</span>
+                  <span className='truncate text-xs'>{safeUser.email}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto size-4' />
               </SidebarMenuButton>
@@ -68,12 +83,12 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuLabel className='p-0 font-normal'>
                 <div className='flex items-center gap-2 px-1 py-1.5 text-start text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className='rounded-lg'>SN</AvatarFallback>
+                    <AvatarImage src={safeUser.avatar} alt={safeUser.name} />
+                    <AvatarFallback className='rounded-lg'>{initials}</AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
-                    <span className='truncate font-semibold'>{user.name}</span>
-                    <span className='truncate text-xs'>{user.email}</span>
+                    <span className='truncate font-semibold'>{safeUser.name}</span>
+                    <span className='truncate text-xs'>{safeUser.email}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>

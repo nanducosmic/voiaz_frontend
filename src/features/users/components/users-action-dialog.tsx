@@ -1,10 +1,9 @@
-'use client'
-
-import { z } from 'zod'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { showSubmittedData } from '@/lib/show-submitted-data'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { showSubmittedData } from '@/lib/show-submitted-data';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -40,7 +39,68 @@ const formSchema = z
     role: z.string().min(1, 'Role is required.'),
     confirmPassword: z.string().transform((pwd) => pwd.trim()),
     isEdit: z.boolean(),
+    tenant_id: z.string().optional(),
   })
+    .refine(
+      (data) => {
+        if (data.isEdit && !data.password) return true
+        return data.password.length > 0
+      },
+      {
+        message: 'Password is required.',
+        path: ['password'],
+      }
+    )
+    .refine(
+      ({ isEdit, password }) => {
+        if (isEdit && !password) return true
+        return password.length >= 8
+      },
+      {
+        message: 'Password must be at least 8 characters long.',
+        path: ['password'],
+      }
+    )
+    .refine(
+      ({ isEdit, password }) => {
+        if (isEdit && !password) return true
+        return /[a-z]/.test(password)
+      },
+      {
+        message: 'Password must contain at least one lowercase letter.',
+        path: ['password'],
+      }
+    )
+    .refine(
+      ({ isEdit, password }) => {
+        if (isEdit && !password) return true
+        return /\d/.test(password)
+      },
+      {
+        message: 'Password must contain at least one number.',
+        path: ['password'],
+      }
+    )
+    .refine(
+      ({ isEdit, password, confirmPassword }) => {
+        if (isEdit && !password) return true
+        return password === confirmPassword
+      },
+      {
+        message: "Passwords don't match.",
+        path: ['confirmPassword'],
+      }
+    )
+    .refine(
+      (data) => {
+        if (data.role === 'super_admin' && !data.tenant_id) return false
+        return true
+      },
+      {
+        message: 'Please select an organization for this user..',
+        path: ['tenant_id'],
+      }
+    )
   .refine(
     (data) => {
       if (data.isEdit && !data.password) return true
@@ -91,7 +151,7 @@ const formSchema = z
       path: ['confirmPassword'],
     }
   )
-type UserForm = z.infer<typeof formSchema>
+type UserForm = z.infer<typeof formSchema>;
 
 type UserActionDialogProps = {
   currentRow?: User
@@ -104,7 +164,21 @@ export function UsersActionDialog({
   open,
   onOpenChange,
 }: UserActionDialogProps) {
-  const isEdit = !!currentRow
+  const isEdit = !!currentRow;
+  const [tenants, setTenants] = useState<{ label: string; value: string }[]>([]);
+  useEffect(() => {
+    async function fetchTenants() {
+      try {
+        const res = await import('@/services/api');
+        const { getAllTenants } = res;
+        const { data } = await getAllTenants();
+        setTenants(data.map((t: any) => ({ label: t.name, value: t.id })));
+      } catch (e) {
+        setTenants([]);
+      }
+    }
+    fetchTenants();
+  }, []);
   const form = useForm<UserForm>({
     resolver: zodResolver(formSchema),
     defaultValues: isEdit
@@ -113,6 +187,10 @@ export function UsersActionDialog({
           password: '',
           confirmPassword: '',
           isEdit,
+          tenant_id:
+            typeof currentRow?.tenant_id === 'object'
+              ? currentRow?.tenant_id?._id || ''
+              : currentRow?.tenant_id || '',
         }
       : {
           firstName: '',
@@ -123,9 +201,10 @@ export function UsersActionDialog({
           phoneNumber: '',
           password: '',
           confirmPassword: '',
+          tenant_id: '',
           isEdit,
         },
-  })
+  });
 
   const onSubmit = (values: UserForm) => {
     form.reset()
@@ -190,7 +269,6 @@ export function UsersActionDialog({
                       <Input
                         placeholder='Doe'
                         className='col-span-4'
-                        autoComplete='off'
                         {...field}
                       />
                     </FormControl>
@@ -198,6 +276,27 @@ export function UsersActionDialog({
                   </FormItem>
                 )}
               />
+              {/* Tenant selection for super admins only */}
+              {form.watch('role') === 'super_admin' && (
+                <FormField
+                  control={form.control}
+                  name='tenant_id'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>Tenant</FormLabel>
+                      <SelectDropdown
+                        defaultValue={typeof field.value === 'string' ? field.value : ''}
+                        onValueChange={field.onChange}
+                        placeholder='Select a tenant'
+                        className='col-span-4'
+                        items={tenants}
+                        isPending={tenants.length === 0}
+                      />
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name='username'

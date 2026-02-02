@@ -37,7 +37,7 @@ export function CommandMenu() {
           {sidebarData.navGroups.map((group) => (
             <CommandGroup key={group.title} heading={group.title}>
               {group.items.map((navItem, i) => {
-                if (navItem.url)
+                if ('url' in navItem && navItem.url)
                   return (
                     <CommandItem
                       key={`${navItem.url}-${i}`}
@@ -53,20 +53,24 @@ export function CommandMenu() {
                     </CommandItem>
                   )
 
-                return navItem.items?.map((subItem, i) => (
-                  <CommandItem
-                    key={`${navItem.title}-${subItem.url}-${i}`}
-                    value={`${navItem.title}-${subItem.url}`}
-                    onSelect={() => {
-                      runCommand(() => navigate({ to: subItem.url }))
-                    }}
-                  >
-                    <div className='flex size-4 items-center justify-center'>
-                      <ArrowRight className='size-2 text-muted-foreground/80' />
-                    </div>
-                    {navItem.title} <ChevronRight /> {subItem.title}
-                  </CommandItem>
-                ))
+                if ('items' in navItem && navItem.items) {
+                  return navItem.items.map((subItem: { title: string; url: string }, i: number) => (
+                    <CommandItem
+                      key={`${navItem.title}-${subItem.url}-${i}`}
+                      value={`${navItem.title}-${subItem.url}`}
+                      onSelect={() => {
+                        runCommand(() => navigate({ to: subItem.url }))
+                      }}
+                    >
+                      <div className='flex size-4 items-center justify-center'>
+                        <ArrowRight className='size-2 text-muted-foreground/80' />
+                      </div>
+                      {navItem.title} <ChevronRight /> {subItem.title}
+                    </CommandItem>
+                  ))
+                }
+
+                return null
               })}
             </CommandGroup>
           ))}

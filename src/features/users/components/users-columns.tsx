@@ -1,67 +1,33 @@
-import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
-import { callTypes, roles } from '../data/data'
-import { type User } from '../data/schema'
-import { DataTableRowActions } from './data-table-row-actions'
+import React from 'react';
+import { type ColumnDef, Table } from '@tanstack/react-table';
+import { DataTableColumnHeader } from '@/components/data-table';
+import { LongText } from '@/components/long-text';
+import { type User } from '../data/schema';
+import { DataTableRowActions } from './data-table-row-actions';
+import { useToast } from '@/hooks/use-toast';
 
-export const usersColumns: ColumnDef<User>[] = [
+export const usersColumns: ColumnDef<User, any>[] = [
   {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
-        className='translate-y-[2px]'
-      />
-    ),
-    meta: {
-      className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
-    },
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
-        className='translate-y-[2px]'
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'username',
+    accessorKey: 'tenant_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Username' />
+      <DataTableColumnHeader column={column} title='Organization' />
     ),
-    cell: ({ row }) => (
-      <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
-    ),
-    meta: {
-      className: cn(
-        'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
-        'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
-      ),
+    cell: ({ row }: { row: any }) => {
+      const tenant = row.original.tenant_id;
+      return tenant && typeof tenant === 'object' && tenant.name
+        ? tenant.name
+        : '—';
     },
-    enableHiding: false,
+    meta: { className: 'w-36' },
   },
   {
-    id: 'fullName',
+    accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
-    cell: ({ row }) => {
-      const { firstName, lastName } = row.original
-      const fullName = `${firstName} ${lastName}`
-      return <LongText className='max-w-36'>{fullName}</LongText>
-    },
+    cell: ({ row }) => (
+      <LongText className='max-w-36'>{row.getValue('name')}</LongText>
+    ),
     meta: { className: 'w-36' },
   },
   {
@@ -74,62 +40,55 @@ export const usersColumns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: 'phoneNumber',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
-    ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Status' />
-    ),
-    cell: ({ row }) => {
-      const { status } = row.original
-      const badgeColor = callTypes.get(status)
-      return (
-        <div className='flex space-x-2'>
-          <Badge variant='outline' className={cn('capitalize', badgeColor)}>
-            {row.getValue('status')}
-          </Badge>
-        </div>
-      )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
-    enableHiding: false,
-    enableSorting: false,
-  },
-  {
     accessorKey: 'role',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Role' />
     ),
     cell: ({ row }) => {
       const { role } = row.original
-      const userType = roles.find(({ value }) => value === role)
-
-      if (!userType) {
-        return null
-      }
-
       return (
         <div className='flex items-center gap-x-2'>
-          {userType.icon && (
-            <userType.icon size={16} className='text-muted-foreground' />
-          )}
-          <span className='text-sm capitalize'>{row.getValue('role')}</span>
+          <span className='text-sm capitalize'>{role.replace('_', ' ')}</span>
         </div>
       )
     },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
-    },
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'balance',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Balance' />
+    ),
+    cell: function BalanceCell({ row, table }: { row: any; table: Table<User> & { options: { meta?: { handleSaveBalance?: (userId: string, amount: number) => void } } } }) {
+      const [editing, setEditing] = React.useState(false);
+      const [amount, setAmount] = React.useState(row.original.balance);
+      const handleSave = () => {
+        const meta = table.options.meta as any;
+        if (typeof meta?.handleSaveBalance === 'function') {
+          meta.handleSaveBalance(row.original.id, amount);
+        }
+        setEditing(false);
+      };
+      return editing ? (
+        <div className='flex items-center gap-2 justify-end'>
+          <input
+            type='number'
+            value={amount}
+            onChange={e => setAmount(Number(e.target.value))}
+            className='w-20 border rounded px-1 text-right'
+            style={{ minWidth: 60 }}
+          />
+          <button className='px-2 py-1 bg-green-500 text-white rounded' onClick={handleSave}>Save</button>
+          <button className='px-2 py-1 bg-gray-300 rounded' onClick={() => { setEditing(false); setAmount(row.original.balance); }}>Cancel</button>
+        </div>
+      ) : (
+        <div className='text-right font-medium flex items-center justify-end gap-2'>
+          ${row.getValue('balance')}
+          <button className='px-1 py-0.5 text-xs bg-blue-100 rounded' onClick={() => setEditing(true)}>Edit</button>
+        </div>
+      );
+    },
   },
   {
     id: 'actions',

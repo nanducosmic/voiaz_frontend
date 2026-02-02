@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
+import API from '@/services/api'
 import { getRouteApi } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -9,13 +11,28 @@ import { UsersDialogs } from './components/users-dialogs'
 import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersProvider } from './components/users-provider'
 import { UsersTable } from './components/users-table'
-import { users } from './data/users'
+import { userListSchema } from './data/schema'
 
 const route = getRouteApi('/_authenticated/users/')
 
 export function Users() {
   const search = route.useSearch()
   const navigate = route.useNavigate()
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/admin/sub-users`, {
+        headers: {
+          'Authorization': 'Bearer ' + token,
+        },
+      });
+      const data = await response.json();
+      return userListSchema.parse(data);
+    },
+  });
 
   return (
     <UsersProvider>
@@ -31,9 +48,9 @@ export function Users() {
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
-            <h2 className='text-2xl font-bold tracking-tight'>User List</h2>
+            <h2 className='text-2xl font-bold tracking-tight'>User Management</h2>
             <p className='text-muted-foreground'>
-              Manage your users and their roles here.
+              Manage users, their roles, and balances here.
             </p>
           </div>
           <UsersPrimaryButtons />

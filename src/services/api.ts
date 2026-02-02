@@ -1,3 +1,15 @@
+export const getTenants = () => API.get('/tenants');
+export const updateUserTenant = (userId: string, tenantId: string) => API.patch(`/admin/sub-users/${userId}/tenant`, { tenant_id: tenantId });
+// Create a new user with tenant_id
+export const createUser = (userData: { name: string; email: string; role: string; balance: number; isActive: boolean; tenant_id: string }) =>
+  API.post('/admin/users', userData);
+// Toggle user status (active/inactive)
+export const toggleUserStatus = (userId: string) => 
+  API.patch(`/admin/sub-users/${userId}/status`);
+// Fetch all admin users (for UserTable 'All Tenants' view)
+export const getAdminUsers = () => API.get('/admin/sub-users');
+// Fetch all sub-users (for UserTable 'All Tenants' view)
+export const getAllSubUsers = () => API.get('/sub-users');
 import axios from "axios";
 
 // Vite automatically handles environment detection. 
@@ -13,15 +25,18 @@ const API = axios.create({
 
 // Attach Token to every request (Keeps you logged in)
 API.interceptors.request.use((config) => {
-  // Logic check: Try to get from 'auth' state or localStorage
+  // Attach Authorization token
   const user = JSON.parse(localStorage.getItem('user') || 'null');
-  
-  // Some structures store token inside a nested 'user' object, others directly.
-  // This check covers both.
   const token = user?.token || localStorage.getItem('token');
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Attach X-Tenant-ID if selected
+  const tenantId = localStorage.getItem('selectedTenantId');
+  if (tenantId) {
+    config.headers['X-Tenant-ID'] = tenantId;
+  } else {
+    delete config.headers['X-Tenant-ID'];
   }
   return config;
 }, (error) => Promise.reject(error));
@@ -44,10 +59,9 @@ API.interceptors.response.use(
 export const login = (credentials: any) => API.post("/auth/login", credentials);
 export const register = (data: any) => API.post("/auth/register", data);
 
-/* --- CORE FEATURE EXPORTS --- */
-export const getDashboardStats = () => API.get("/dashboard/stats");
-export const getContactsSummary = () => API.get("/call-logs/summary");
-export const initiateCalls = (data: { prompt: string; gender: string }) => API.post("/calls/initiate", data);
+/* --- CONTACT MANAGEMENT EXPORTS --- */
+export const getContacts = () => API.get('/contacts');
+export const bulkImportContacts = (contacts: { name: string; phone: string }[]) => API.post('/contacts/bulk', { contacts });
 export const saveAgent = (data: { name: string; prompt: string }) => API.post("/agent", data);
 export const getAgent = () => API.get("/agent");
 export const importContacts = (contacts: string) => API.post("/contacts/import/text", { contacts });
@@ -67,6 +81,18 @@ export const getCalendarStatus = () => API.get("/integrations/google-calendar/st
 export const getCredits = () => API.get('/credits/balance');
 export const getTransactionHistory = () => API.get('/credits/history');
 export const getAllTenants = () => API.get('/tenants');
-export const getAdminStats = () => API.get('/dashboard/stats'); 
+export const getAdminStats = () => API.get('/admin/stats');
+export const getClientStats = () => API.get('/client/stats'); 
+export const updateUserPhone = (userId: string, phoneNumber: string) => API.put(`/users/${userId}/phone`, { phoneNumber });
+export const updateUserBalance = (userId: string, balance: number) => API.patch(`/admin/sub-users/${userId}/balance`, { balance });
+
+// Keep your existing ones, but add these for the Super Admin History Page
+export const getAdminFullHistory = (page = 1) => 
+  API.get(`/admin/all-calls?page=${page}&limit=20`); 
+
+export const adminSyncCallResults = () => 
+  API.post("/admin/call-logs/sync");
+
+
 
 export default API;

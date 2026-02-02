@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconFacebook, IconGithub } from '@/assets/brand-icons'
+import { useNavigate } from '@tanstack/react-router'
+import API from '@/services/api'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,11 +17,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
+// 1. Define schema FIRST to avoid "Cannot find name 'formSchema'"
 const formSchema = z
   .object({
-    email: z.email({
-      error: (iss) =>
-        iss.input === '' ? 'Please enter your email' : undefined,
+    email: z.string().email({
+      message: 'Please enter a valid email address',
     }),
     password: z
       .string()
@@ -33,12 +34,13 @@ const formSchema = z
     path: ['confirmPassword'],
   })
 
-export function SignUpForm({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLFormElement>) {
-  const [isLoading, setIsLoading] = useState(false)
+interface SignUpFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+export function SignUpForm({ className, ...props }: SignUpFormProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+
+  // 2. Initialize form with the schema above
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,96 +50,88 @@ export function SignUpForm({
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
+  // 3. Handle Form Submission
+  // 3. Handle Form Submission
+async function onSubmit(data: z.infer<typeof formSchema>) {
+  setIsLoading(true)
+  try {
+    // API call to your backend
+    await API.post('/auth/register', {
+      email: data.email,
+      password: data.password,
+      name: data.email.split('@')[0],
+      role: 'admin', // Default role for new sign-ups
+    })
 
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 3000)
+    // Success: Account created, redirect to sign-in for manual login
+    navigate({ to: '/sign-in' })
+  } catch (error: any) {
+    console.error('Registration error:', error.response?.data?.message || error.message)
+    // Set server error on the email field if registration fails
+    form.setError('email', { 
+      type: 'manual', 
+      message: error.response?.data?.message || 'Registration failed. Try again.' 
+    })
+  } finally {
+    setIsLoading(false)
   }
+}
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-3', className)}
-        {...props}
-      >
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='password'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder='********' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name='confirmPassword'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder='********' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button className='mt-2' disabled={isLoading}>
-          Create Account
-        </Button>
+    <div className={cn('grid gap-6', className)} {...props}>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className='grid gap-3'>
+          
+          {/* Email Field */}
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder='name@example.com' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className='relative my-2'>
-          <div className='absolute inset-0 flex items-center'>
-            <span className='w-full border-t' />
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-background px-2 text-muted-foreground'>
-              Or continue with
-            </span>
-          </div>
-        </div>
+          {/* Password Field */}
+          <FormField
+            control={form.control}
+            name='password'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <PasswordInput placeholder='********' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className='grid grid-cols-2 gap-2'>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconGithub className='h-4 w-4' /> GitHub
+          {/* Confirm Password Field */}
+          <FormField
+            control={form.control}
+            name='confirmPassword'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <PasswordInput placeholder='********' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button className='mt-2' type='submit' disabled={isLoading}>
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </Button>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconFacebook className='h-4 w-4' /> Facebook
-          </Button>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </div>
   )
 }

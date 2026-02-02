@@ -11,33 +11,46 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
-import { type User } from '../data/schema'
-import { DataTableBulkActions } from './data-table-bulk-actions'
-import { usersColumns as columns } from './users-columns'
+import { cn } from '@/lib/utils';
+import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataTablePagination, DataTableToolbar } from '@/components/data-table';
+import { roles } from '../data/data';
+import { type User } from '../data/schema';
+import { updateUserBalance, getTenants, updateUserTenant } from '@/services/api';
+import { DataTableBulkActions } from './data-table-bulk-actions';
+import { usersColumns } from './users-columns';
+
 
 type DataTableProps = {
-  data: User[]
-  search: Record<string, unknown>
-  navigate: NavigateFn
-}
+  data: User[];
+  search: Record<string, unknown>;
+  navigate: NavigateFn;
+};
 
 export function UsersTable({ data, search, navigate }: DataTableProps) {
+
   // Local UI-only states
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ tenant_id: true });
+  const [sorting, setSorting] = useState<SortingState>([]);
+  // Real-time table data state
+  const [tableData, setTableData] = useState<User[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+
+  // Fetch tenants on mount
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
+  useEffect(() => {
+    getTenants().then(res => {
+      let t = res.data;
+      if (t && Array.isArray(t.data)) t = t.data;
+      else if (t && Array.isArray(t.tenants)) t = t.tenants;
+      else if (!Array.isArray(t)) t = [];
+      setTenants(t);
+    });
+  }, []);
 
   // Local state management for table (uncomment to use local-only state, not synced with URL)
   // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
@@ -61,12 +74,32 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
-  })
+  });
 
   // eslint-disable-next-line react-hooks/incompatible-library
+  const handleSaveBalance = async (userId: string, newAmount: number) => {
+    try {
+      await updateUserBalance(userId, newAmount);
+      setTableData(prev => prev.map(u => u.id === userId ? { ...u, balance: newAmount } : u));
+    } catch (e) {
+      // Optionally show error
+    }
+  };
+  // Update tenant for a user
+  const handleUpdateTenant = async (userId: string, tenantId: string) => {
+    try {
+      await updateUserTenant(userId, tenantId);
+      setTableData(prev => prev.map(u =>
+        u.id === userId
+          ? { ...u, tenant_id: tenants.find(t => t._id === tenantId) || null }
+          : u
+      ));
+    } catch (e) {}
+  };
+
   const table = useReactTable({
-    data,
-    columns,
+    data: tableData,
+    columns: usersColumns,
     state: {
       sorting,
       pagination,
@@ -86,34 +119,27 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
+    meta: { handleSaveBalance, tenants: tenants, onUpdateTenant: handleUpdateTenant },
+    initialState: { columnVisibility: { tenant_id: true } },
+    getRowId: (row) => row.id || row._id,
+  });
 
   useEffect(() => {
-    ensurePageInRange(table.getPageCount())
-  }, [table, ensurePageInRange])
+    ensurePageInRange(table.getPageCount());
+  }, [table, ensurePageInRange]);
 
   return (
     <div
       className={cn(
-        'max-sm:has-[div[role="toolbar"]]:mb-16', // Add margin bottom to the table on mobile when the toolbar is visible
+        'max-sm:has-[div[role="toolbar"]]:mb-16',
         'flex flex-1 flex-col gap-4'
       )}
     >
       <DataTableToolbar
         table={table}
         searchPlaceholder='Filter users...'
-        searchKey='username'
+        searchKey='name'
         filters={[
-          {
-            columnId: 'status',
-            title: 'Status',
-            options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-              { label: 'Invited', value: 'invited' },
-              { label: 'Suspended', value: 'suspended' },
-            ],
-          },
           {
             columnId: 'role',
             title: 'Role',
@@ -126,50 +152,34 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className='group/row'>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={cn(
-                        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
-                        header.column.columnDef.meta?.className,
-                        header.column.columnDef.meta?.thClassName
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className={cn(
+                      'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
+                      header.column.columnDef.meta?.className,
+                      header.column.columnDef.meta?.thClassName
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className='group/row'
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        'bg-background group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted',
-                        cell.column.columnDef.meta?.className,
-                        cell.column.columnDef.meta?.tdClassName
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <TableCell key={cell.id} className={cell.column.columnDef.meta?.className}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -177,7 +187,7 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={usersColumns.length}
                   className='h-24 text-center'
                 >
                   No results.
@@ -190,5 +200,5 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
       <DataTablePagination table={table} className='mt-auto' />
       <DataTableBulkActions table={table} />
     </div>
-  )
+  );
 }
