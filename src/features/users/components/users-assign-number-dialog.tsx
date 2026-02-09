@@ -17,9 +17,13 @@ export function UsersAssignNumberDialog() {
     setLoading(true)
 
     try {
-      await updateUserPhone(currentRow.id, phoneNumber)
-      setOpen(null)
-      // TODO: Refresh the users list
+      if (typeof currentRow.id === 'string') {
+        await updateUserPhone(currentRow.id, phoneNumber)
+        setOpen(null)
+        // TODO: Refresh the users list
+      } else {
+        throw new Error('User ID is missing or invalid.')
+      }
     } catch (err) {
       console.error('Assign number error:', err)
     } finally {

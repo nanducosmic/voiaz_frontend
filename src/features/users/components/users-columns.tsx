@@ -4,7 +4,6 @@ import { DataTableColumnHeader } from '@/components/data-table';
 import { LongText } from '@/components/long-text';
 import { type User } from '../data/schema';
 import { DataTableRowActions } from './data-table-row-actions';
-import { useToast } from '@/hooks/use-toast';
 
 export const usersColumns: ColumnDef<User, any>[] = [
   {

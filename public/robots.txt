@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Specifically allow social media crawlers to see previews
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Twitterbot
+Allow: /

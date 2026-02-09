@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import API from '@/services/api'
 import { getRouteApi } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -22,14 +21,9 @@ export function Users() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const response = await fetch(`${baseUrl}/admin/sub-users`, {
-        headers: {
-          'Authorization': 'Bearer ' + token,
-        },
-      });
-      const data = await response.json();
+        const api = require('@/services/api').default;
+        const response = await api.get('/admin/sub-users');
+        const data = response.data;
       return userListSchema.parse(data);
     },
   });

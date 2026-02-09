@@ -1,4 +1,18 @@
 [[redirects]]
+  from = "/og-preview.png"
+  to = "/og-preview.png"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/robots.txt"
+  status = 200
+  force = true
+
+
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

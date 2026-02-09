@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getTenants } from '@/services/api';
 import { cn } from '@/lib/utils';
 
+import api from '@/services/api';
+
 export const Route = createLazyFileRoute('/_authenticated/admin/users')({
   component: AdminUsersPage,
 });
@@ -23,7 +25,7 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/auth/me').then(res => res.json()).then(setUser);
+    api.get('/auth/me').then(res => setUser(res.data));
   }, []);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ function AdminUsersPage() {
   }, [user]);
 
   useEffect(() => {
-    fetch('/api/users').then(res => res.json()).then(data => setUsers(data.users || []));
+    api.get('/users').then(res => setUsers(res.data.users || []));
     getTenants().then(res => {
       let t = res.data;
       if (t && Array.isArray(t.data)) t = t.data;
@@ -47,16 +49,14 @@ function AdminUsersPage() {
     if (!form.name || !form.email || !form.role || !form.tenant_id) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error('Failed to invite user');
+      const res = await api.post('/auth/register', form);
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error(res.data?.message || 'Failed to invite user');
+      }
       toast({ title: 'User invited', description: `Successfully invited ${form.email}.`, variant: 'default' });
       setInviteOpen(false);
       setForm({ name: '', email: '', role: 'user', tenant_id: '' });
-      fetch('/api/users').then(res => res.json()).then(data => setUsers(data.users || []));
+      api.get('/users').then(res => setUsers(res.data.users || []));
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Failed to invite user', variant: 'destructive' });
     } finally {

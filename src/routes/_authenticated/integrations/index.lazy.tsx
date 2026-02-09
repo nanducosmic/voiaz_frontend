@@ -17,7 +17,7 @@ export const Route = createLazyFileRoute('/_authenticated/integrations/')({
 
 function IntegrationsPage() {
   // Use environment variable for the API base to ensure it works in production
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
   const handleGoogleConnect = () => {
     // Redirects to the OAuth initiator on your backend

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createLazyFileRoute } from '@tanstack/react-router'
-import api from '@/lib/api' // <-- Using the central API instance
+import api from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,60 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog'
+
+// ...existing code...
+
+function VoiceSettingsDialog({ tenant, onSaved }: { tenant: any, onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [maleAgentId, setMaleAgentId] = useState(tenant.maleAgentId || '');
+  const [femaleAgentId, setFemaleAgentId] = useState(tenant.femaleAgentId || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.patch(`/tenants/${tenant._id}/config`, {
+        maleAgentId,
+        femaleAgentId
+      });
+      setOpen(false);
+      onSaved();
+    } catch (err) {
+      alert('Failed to update voice settings.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">Voice Settings</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Voice Settings for {tenant.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="block text-sm font-medium mb-1">Male Agent ID</label>
+            <Input value={maleAgentId} onChange={e => setMaleAgentId(e.target.value)} placeholder="Paste maleAgentId here" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Female Agent ID</label>
+            <Input value={femaleAgentId} onChange={e => setFemaleAgentId(e.target.value)} placeholder="Paste femaleAgentId here" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 import { 
   IconShieldCheck, 
   IconBuildingCommunity, 
@@ -184,7 +238,8 @@ function AdminPanel() {
                           Active
                         </div>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-right flex gap-2 justify-end">
+                        <VoiceSettingsDialog tenant={t} onSaved={fetchTenants} />
                         <Button variant="ghost" size="icon"><IconDotsVertical size={16} /></Button>
                       </td>
                     </tr>

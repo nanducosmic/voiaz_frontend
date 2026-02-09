@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createLazyFileRoute } from '@tanstack/react-router'
-import api from '@/lib/api'
+import api from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

@@ -12,9 +12,9 @@ export const getAdminUsers = () => API.get('/admin/sub-users');
 export const getAllSubUsers = () => API.get('/sub-users');
 import axios from "axios";
 
-// Vite automatically handles environment detection. 
-// It will use the .env value if available, otherwise it falls back to the production URL.
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://bolnabackend1-production.up.railway.app/api";
+// Easily switch between local and Railway backend:
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://bolnabackend1-production.up.railway.app/api';
+// To use Railway backend, set VITE_API_BASE_URL to 'https://bolnabackend1-production.up.railway.app/api' in your .env file.
 
 const API = axios.create({
   baseURL: API_BASE,
@@ -23,7 +23,7 @@ const API = axios.create({
   },
 });
 
-// Attach Token to every request (Keeps you logged in)
+// Attach Token and X-Tenant-ID to every request (Keeps you logged in and multi-tenant aware)
 API.interceptors.request.use((config) => {
   // Attach Authorization token
   const user = JSON.parse(localStorage.getItem('user') || 'null');
@@ -31,12 +31,17 @@ API.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // Attach X-Tenant-ID if selected
-  const tenantId = localStorage.getItem('selectedTenantId');
-  if (tenantId) {
-    config.headers['X-Tenant-ID'] = tenantId;
+  // Attach X-Tenant-ID for multi-tenancy
+  // Priority: user.tenant_id > selectedTenantId
+  if (user?.tenant_id) {
+    config.headers['X-Tenant-ID'] = user.tenant_id;
   } else {
-    delete config.headers['X-Tenant-ID'];
+    const tenantId = localStorage.getItem('selectedTenantId');
+    if (tenantId) {
+      config.headers['X-Tenant-ID'] = tenantId;
+    } else {
+      delete config.headers['X-Tenant-ID'];
+    }
   }
   return config;
 }, (error) => Promise.reject(error));
@@ -60,7 +65,9 @@ export const login = (credentials: any) => API.post("/auth/login", credentials);
 export const register = (data: any) => API.post("/auth/register", data);
 
 /* --- CONTACT MANAGEMENT EXPORTS --- */
-export const getContacts = () => API.get('/contacts');
+// Change this in your api.ts
+export const getContacts = (params?: { list_id?: string }) => 
+  API.get('/contacts', { params });
 export const bulkImportContacts = (contacts: { name: string; phone: string }[]) => API.post('/contacts/bulk', { contacts });
 export const saveAgent = (data: { name: string; prompt: string }) => API.post("/agent", data);
 export const getAgent = () => API.get("/agent");
@@ -93,6 +100,14 @@ export const getAdminFullHistory = (page = 1) =>
 export const adminSyncCallResults = () => 
   API.post("/admin/call-logs/sync");
 
-
-
+// Add these to your API.ts file
+export const getContactLists = () => API.get('/contacts/lists');
+export const createContactList = (data: { name: string, description?: string }) => API.post('/contacts/lists', data);
+export const importExcelContacts = (formData: FormData) => API.post('/contacts/import/excel', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const startCampaign = (data: { list_id: string, agent_id: string }) => 
+  API.post('/campaigns/start', data);
+// Fix getContactListById endpoint (plural path)
+export const getContactListById = (id: string) => API.get('/contacts/lists/' + id);
 export default API;

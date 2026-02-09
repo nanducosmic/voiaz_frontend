@@ -205,12 +205,9 @@ export function AgentsTable() {
                 if (!selectedTenant || creditAmount <= 0) return;
                 setAssignLoading(true);
                 try {
-                  const res = await fetch(`/api/tenants/${selectedTenant._id}/credits`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: creditAmount }),
-                  });
-                  if (!res.ok) throw new Error('Failed to assign credits');
+                  const api = require('@/services/api').default;
+                  const res = await api.post(`/tenants/${selectedTenant._id}/credits`, { amount: creditAmount });
+                  if (res.status !== 200 && res.status !== 201) throw new Error('Failed to assign credits');
                   toast({ title: 'Credits assigned', description: `Successfully assigned $${creditAmount.toFixed(2)} to ${selectedTenant.name}.`, variant: 'default' });
                   setAssignDialogOpen(false);
                   setSelectedTenant(null);

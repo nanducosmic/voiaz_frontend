@@ -22,7 +22,7 @@ export const sidebarData = {
   },
   teams: [
     {
-      name: 'Voaiz.com by Richinnovations',
+      name: 'Voaiz.com',
       logo: IconCommand,
       // plan removed
     },

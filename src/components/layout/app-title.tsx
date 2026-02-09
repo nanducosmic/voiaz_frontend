@@ -26,7 +26,7 @@ export function AppTitle() {
               className='grid flex-1 text-start text-sm leading-tight'
             >
               <span className='truncate font-bold'>Voaiz</span>
-              <span className='truncate text-xs'>by Richinnovations</span>
+              {/* Removed 'by Richinnovations' */}
             </Link>
             <ToggleSidebar />
           </div>

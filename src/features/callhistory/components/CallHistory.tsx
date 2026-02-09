@@ -22,7 +22,7 @@ export default function CallHistory() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['callHistory'],
     queryFn: async () => {
-      const res = await axios.get('/api/calls/history');
+      const res = await axios.get('call-logs/history');
       return res.data;
     },
   });

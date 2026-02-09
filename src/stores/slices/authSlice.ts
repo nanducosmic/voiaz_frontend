@@ -2,17 +2,17 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import API from '@/services/api';
 
 // --- TYPES ---
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
   role: 'super_admin' | 'admin';
   balance: number;
-  tenant_id: string;
+  tenant_id: string; // Crucial: required for KB training
   createdAt: string;
 }
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
@@ -20,7 +20,7 @@ interface AuthState {
   error: string | null;
 }
 
-// This matches your actual backend response structure
+// Matches your actual backend response structure exactly
 interface AuthResponse {
   token: string;
   _id: string;
@@ -28,11 +28,13 @@ interface AuthResponse {
   email: string;
   role: 'super_admin' | 'admin';
   balance: number;
-  tenant_id: string;
+  tenant_id: string; // Received from backend login controller
 }
 
 // --- STORAGE HELPERS ---
 const getStoredData = () => {
+  if (typeof window === 'undefined') return { user: null, token: null };
+  
   const token = localStorage.getItem('token');
   const userData = localStorage.getItem('user');
 
@@ -46,6 +48,7 @@ const getStoredData = () => {
       user: userData && userData !== "undefined" ? JSON.parse(userData) : null
     };
   } catch (error) {
+    console.error("Failed to parse stored user data:", error);
     return { user: null, token: null };
   }
 };
@@ -69,18 +72,18 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await API.post<AuthResponse>('/auth/login', credentials);
 
-      // Destructure token, _id, name, email, role, balance, and tenant_id from the response
+      // Destructure fields from the backend response
       const { token, _id, name, email, role, balance, tenant_id } = response.data;
 
-      // Map the backend _id to the frontend id
+      // Map backend _id to frontend id and include tenant_id
       const user: User = {
         id: _id,
         name,
         email,
         role,
         balance,
-        tenant_id,
-        createdAt: new Date().toISOString(), // Assuming createdAt is not in login response, set current time or handle accordingly
+        tenant_id, // Preserving the tenant_id for the project logic
+        createdAt: new Date().toISOString(), 
       };
 
       if (!token || !user.id) {
@@ -99,7 +102,6 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: any, { rejectWithValue }) => {
     try {
-      // We do NOT save to localStorage here so they are forced to log in
       const response = await API.post<AuthResponse>('/auth/register', userData);
       return response.data;
     } catch (err: any) {
@@ -117,6 +119,8 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
+      localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
     },
     logout: (state) => {
       state.user = null;
@@ -140,7 +144,8 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
-        // Persistence: save the token and the user object (stringified) to localStorage
+
+        // PERSISTENCE: Now includes the full user object with tenant_id
         localStorage.setItem('token', action.payload.token);
         localStorage.setItem('user', JSON.stringify(action.payload.user));
       })

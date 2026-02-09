@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -9,10 +8,9 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { AgentsTable } from './components/agents-table'
 import { getTenants } from '@/services/api'
 
-const route = getRouteApi('/_authenticated/agents/')
 
 export function Agents() {
-  const [tenants, setTenants] = useState<any[]>([]);
+  const [, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +23,7 @@ export function Agents() {
         else if (!Array.isArray(t)) t = [];
         setTenants(t);
       })
-      .catch(err => {
+      .catch(() => {
         setError('Failed to load tenants');
       })
       .finally(() => setLoading(false));

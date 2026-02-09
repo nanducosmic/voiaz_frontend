@@ -1,6 +1,6 @@
-# Voaiz.com by Richinnovations
+# Voaiz.com
 
-Admin Dashboard UI for Voaiz.com by Richinnovations. Built with responsiveness and accessibility in mind.
+Admin Dashboard UI for Voaiz.com. Built with responsiveness and accessibility in mind.
 
 ![alt text](public/images/shadcn-admin.png)
 

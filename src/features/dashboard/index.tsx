@@ -6,7 +6,6 @@ import { AgentsTable } from '@/features/agents/components/agents-table';
 // Removed duplicate import of useSelector
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -81,101 +80,102 @@ function DashboardContent() {
   }, [isSuperAdmin, tenantId]);
 
   return (
-    <>
-      <Header>
-        <TopNav links={topNav} />
-        <div className='ms-auto flex items-center space-x-4'>
+    <Main>
+      {/* Top Bar */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <TopNav links={topNav} />
+        </div>
+        <div className="flex items-center gap-2">
           <Search />
           <ThemeSwitch />
           <ProfileDropdown />
         </div>
-      </Header>
+      </div>
 
-      <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>
-            {isSuperAdmin ? 'Super Admin Dashboard' : 'Client Dashboard'}
-          </h1>
+      <div className='mb-2 flex items-center justify-between space-y-2'>
+        <h1 className='text-2xl font-bold tracking-tight'>
+          {isSuperAdmin ? 'Super Admin Dashboard' : 'Client Dashboard'}
+        </h1>
+      </div>
+
+      {error && (
+        <div className='mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900 dark:text-red-200'>
+          Failed to load dashboard statistics. Please try again later.
         </div>
+      )}
 
-        {error && (
-          <div className='mb-4 rounded-md border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900 dark:text-red-200'>
-            Failed to load dashboard statistics. Please try again later.
-          </div>
+      {/* Stat Cards */}
+      <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6'>
+        {isSuperAdmin ? (
+          <>
+            <StatCard
+              title='Platform Users'
+              value={stats?.totalSubUsers ?? 0}
+              icon={IconUsers}
+            />
+            <StatCard
+              title='Total Tenants'
+              value={stats?.totalTenants ?? 0}
+              icon={IconUserCheck}
+              color='text-purple-500'
+            />
+            <StatCard
+              title='Total Credits in System'
+              value={stats?.totalCreditsInSystem ?? 0}
+              icon={IconPhoneCall}
+              color='text-green-500'
+            />
+            <StatCard
+              title='Active Campaigns'
+              value={stats?.activeCampaigns ?? 0}
+              icon={IconTarget}
+              color='text-blue-500'
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title='Available Credits'
+              value={`$${(stats && typeof stats === 'object' && 'balance' in stats ? String(stats.balance) : '0')}`}
+              icon={IconWallet}
+              color='text-indigo-500'
+            />
+            <StatCard
+              title='My Contact List'
+              value={stats && typeof stats === 'object' && 'totalContacts' in stats ? Number(stats.totalContacts) : 0}
+              icon={IconUserCheck}
+              color='text-purple-500'
+            />
+            <StatCard
+              title='Campaign Progress'
+              value={stats && typeof stats === 'object' && 'callsMade' in stats ? Number(stats.callsMade) : 0}
+              icon={IconTrendingUp}
+              color='text-orange-500'
+            />
+          </>
         )}
+      </div>
 
-        {/* Stat Cards */}
-        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6'>
-          {isSuperAdmin ? (
-            <>
-              <StatCard
-                title='Platform Users'
-                value={stats?.totalSubUsers ?? 0}
-                icon={IconUsers}
-              />
-              <StatCard
-                title='Total Tenants'
-                value={stats?.totalTenants ?? 0}
-                icon={IconUserCheck}
-                color='text-purple-500'
-              />
-              <StatCard
-                title='Total Credits in System'
-                value={stats?.totalCreditsInSystem ?? 0}
-                icon={IconPhoneCall}
-                color='text-green-500'
-              />
-              <StatCard
-                title='Active Campaigns'
-                value={stats?.activeCampaigns ?? 0}
-                icon={IconTarget}
-                color='text-blue-500'
-              />
-            </>
+      {/* Call Activity Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Call Activity (Last 7 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className='h-[350px] flex items-center justify-center'>
+              <Skeleton className='h-[300px] w-full' />
+            </div>
           ) : (
-            <>
-              <StatCard
-                title='Available Credits'
-                value={`$${(stats && typeof stats === 'object' && 'balance' in stats ? String(stats.balance) : '0')}`}
-                icon={IconWallet}
-                color='text-indigo-500'
-              />
-              <StatCard
-                title='My Contact List'
-                value={stats && typeof stats === 'object' && 'totalContacts' in stats ? Number(stats.totalContacts) : 0}
-                icon={IconUserCheck}
-                color='text-purple-500'
-              />
-              <StatCard
-                title='Campaign Progress'
-                value={stats && typeof stats === 'object' && 'callsMade' in stats ? Number(stats.callsMade) : 0}
-                icon={IconTrendingUp}
-                color='text-orange-500'
-              />
-            </>
+            <CallActivityChart data={stats?.callActivity ?? []} />
           )}
-        </div>
-
-        {/* Call Activity Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Call Activity (Last 7 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className='h-[350px] flex items-center justify-center'>
-                <Skeleton className='h-[300px] w-full' />
-              </div>
-            ) : (
-              <CallActivityChart data={stats?.callActivity ?? []} />
-            )}
-          </CardContent>
-        </Card>
-        {/* User Table below stats cards */}
-        <div className='mt-8'>
-          <AgentsTable />
-        </div>
-      </Main>
-    </>
+        </CardContent>
+      </Card>
+      {/* User Table below stats cards */}
+      <div className='mt-8'>
+        <AgentsTable />
+      </div>
+    </Main>
   );
 }

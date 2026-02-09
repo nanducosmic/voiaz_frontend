@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRouter, redirect } from '@tanstack/react-router';
+import { redirect } from '@tanstack/react-router';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,8 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getTenants } from '@/services/api';
 import { cn } from '@/lib/utils';
 
+import api from '@/services/api';
+
 export default function UsersPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export default function UsersPage() {
   // Simulate user fetch (replace with your auth context)
   useEffect(() => {
     // TODO: Replace with real user context
-    fetch('/api/auth/me').then(res => res.json()).then(setUser);
+    api.get('/auth/me').then(res => setUser(res.data));
   }, []);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function UsersPage() {
   }, [user]);
 
   useEffect(() => {
-    fetch('/api/users').then(res => res.json()).then(data => setUsers(data.users || []));
+    api.get('/users').then(res => setUsers(res.data.users || []));
     getTenants().then(res => {
       let t = res.data;
       if (t && Array.isArray(t.data)) t = t.data;
@@ -46,17 +47,15 @@ export default function UsersPage() {
     if (!form.name || !form.email || !form.role || !form.tenant_id) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error('Failed to invite user');
+      const res = await api.post('/auth/register', form);
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error(res.data?.message || 'Failed to invite user');
+      }
       toast({ title: 'User invited', description: `Successfully invited ${form.email}.`, variant: 'default' });
       setInviteOpen(false);
       setForm({ name: '', email: '', role: 'user', tenant_id: '' });
       // Refresh users
-      fetch('/api/users').then(res => res.json()).then(data => setUsers(data.users || []));
+      api.get('/users').then(res => setUsers(res.data.users || []));
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Failed to invite user', variant: 'destructive' });
     } finally {

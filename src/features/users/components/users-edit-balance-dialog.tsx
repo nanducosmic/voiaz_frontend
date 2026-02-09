@@ -18,9 +18,13 @@ export function UsersEditBalanceDialog() {
     setLoading(true)
 
     try {
-      await updateUserBalance(currentRow.id, Number(balance))
-      setOpen(null)
-      // TODO: Refresh the users list
+      if (typeof currentRow.id === 'string') {
+        await updateUserBalance(currentRow.id, Number(balance))
+        setOpen(null)
+        // TODO: Refresh the users list
+      } else {
+        throw new Error('User ID is missing or invalid.')
+      }
     } catch (err) {
       console.error('Edit balance error:', err)
     } finally {

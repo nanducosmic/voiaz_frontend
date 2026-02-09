@@ -11,14 +11,9 @@ export function Main({ fixed, className, fluid, ...props }: MainProps) {
     <main
       data-layout={fixed ? 'fixed' : 'auto'}
       className={cn(
-        'px-4 py-6',
-
-        // If layout is fixed, make the main container flex and grow
+        'container w-full px-4 py-6', // Use Tailwind's container and spacing utilities
         fixed && 'flex grow flex-col overflow-hidden',
-
-        // If layout is not fluid, set the max-width
-        !fluid &&
-          '@7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl',
+        fluid && 'max-w-full', // If fluid, remove max-width
         className
       )}
       {...props}

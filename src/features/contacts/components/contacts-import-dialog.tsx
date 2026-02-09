@@ -50,27 +50,44 @@ export function ContactsImportDialog({
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const contacts: ParsedContact[] = results.data
-          .filter((row: any) => row.name && row.phone)
-          .map((row: any) => ({
-            name: String(row.name).trim(),
-            phone: String(row.phone).trim(),
-          }))
+        // Get tenant_id from localStorage or user
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const tenant_id = user?.tenant_id || localStorage.getItem('selectedTenantId') || '';
+        const contacts: any[] = results.data
+          .filter((row: any) => row.phone)
+          .map((row: any) => {
+            let raw = String(row.phone).trim();
+            // Nandu fix: If number is 12 digits and starts with 91, treat as Indian mobile
+            if (/^91\d{10}$/.test(raw)) {
+              raw = '+91' + raw.slice(2);
+            } else if (/^\d{10}$/.test(raw)) {
+              // If just 10 digits, assume Indian mobile
+              raw = '+91' + raw;
+            } else if (!raw.startsWith('+')) {
+              // If not starting with +, add +
+              raw = '+' + raw;
+            }
+            return {
+              name: String(row.name || '').trim() || raw,
+              phone: raw,
+              tenant_id,
+            };
+          });
 
-        setParsedContacts(contacts)
+        setParsedContacts(contacts);
         toast({
           title: 'File parsed successfully',
           description: `Found ${contacts.length} contacts to import.`,
-        })
+        });
       },
       error: (error) => {
         toast({
           title: 'Parse error',
           description: error.message,
           variant: 'destructive',
-        })
+        });
       },
-    })
+    });
   }
 
   const removeContact = (index: number) => {

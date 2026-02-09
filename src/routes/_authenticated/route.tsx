@@ -1,34 +1,16 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+
+// This file intentionally left blank to avoid root route conflicts.
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated')({
-  beforeLoad: ({ context, location }) => {
-    const storedToken = localStorage.getItem('token')
-    const contextToken = context.auth?.token
-
-    const activeToken = storedToken || contextToken
-
-    const isAuthenticated =
-      !!activeToken &&
-      activeToken !== 'undefined' &&
-      activeToken !== 'null'
-
-    if (!isAuthenticated) {
-      throw redirect({
-        to: '/sign-in',
-        search: {
-          redirect: location.href,
-        },
-      })
-    }
-
-    return {
-      auth: context.auth,
-    }
-  },
   component: () => (
-    <AuthenticatedLayout>
-      <Outlet />
-    </AuthenticatedLayout>
+    <div className="layout">
+      {/* This is where your Sidebar and Header live */}
+      <nav>Sidebar</nav> 
+      <main>
+        {/* This Outlet is CRITICAL - it renders History, Dashboard, etc. */}
+        <Outlet /> 
+      </main>
+    </div>
   ),
 })

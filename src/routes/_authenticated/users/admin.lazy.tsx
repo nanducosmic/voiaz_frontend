@@ -22,18 +22,14 @@ function AdminUsersPage() {
   const [form, setForm] = useState({ name: '', email: '', role: 'user', tenant_id: '' });
   const [loading, setLoading] = useState(false);
 
-  // Helper to get auth headers
-  const getAuthHeaders = () => ({
-    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    'Content-Type': 'application/json',
-  });
+  // Use the shared API instance for all requests
+  const api = require('@/services/api').default;
 
   // 1. Fetch current user session
   useEffect(() => {
-    fetch('/api/auth/me', { headers: getAuthHeaders() })
-      .then((res) => res.json())
-      .then(setUser)
-      .catch((err) => console.error('Auth check failed', err));
+    api.get('/auth/me')
+      .then((res: { data: any }) => setUser(res.data))
+      .catch((err: unknown) => console.error('Auth check failed', err));
   }, []);
 
   // 2. Security: Only allow Super Admin
@@ -47,8 +43,8 @@ function AdminUsersPage() {
   const fetchTableData = async () => {
     try {
       // Fetch users from the admin/sub-users endpoint we found in app.ts
-      const userRes = await fetch('/api/admin/sub-users', { headers: getAuthHeaders() });
-      const userData = await userRes.json();
+      const userRes: { data: any } = await api.get('/admin/sub-users');
+      const userData = userRes.data;
 
       // Handle different response shapes (array vs object)
       let userList = Array.isArray(userData) ? userData : (userData.users || userData.subUsers || []);
@@ -57,7 +53,7 @@ function AdminUsersPage() {
       setUsers(userList);
 
       // Fetch tenants for the mapping
-      const tenantRes = await getTenants();
+      const tenantRes: { data: any } = await getTenants();
       let t = tenantRes.data;
       if (t && Array.isArray(t.data)) t = t.data;
       else if (t && Array.isArray(t.tenants)) t = t.tenants;
@@ -76,15 +72,9 @@ function AdminUsersPage() {
     if (!form.name || !form.email || !form.role || !form.tenant_id) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(form),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to invite user');
+      const res: { status: number; data: any } = await api.post('/auth/register', form);
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error(res.data?.message || 'Failed to invite user');
       }
 
       toast({ title: 'User invited', description: `Successfully invited ${form.email}.` });
